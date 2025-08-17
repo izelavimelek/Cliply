@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/poll-views?secret=\u003cset-in-vercel-env\u003e", "schedule": "*/45 * * * *" },
+    { "path": "/api/cron/compute-payouts?secret=\u003cset-in-vercel-env\u003e", "schedule": "0 0 * * *" }
+  ]
+}
