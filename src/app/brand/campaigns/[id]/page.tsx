@@ -32,6 +32,7 @@ import {
   BudgetTimeline,
   ContentRequirements,
   AudienceTargeting,
+  Assets,
   Submissions,
   Analytics,
   CommunicationAssets,
@@ -179,6 +180,7 @@ export default function CampaignDetailPage() {
   const budgetValidation = useSectionFormValidation(campaign, 'budget-timeline');
   const contentValidation = useSectionFormValidation(campaign, 'content-requirements');
   const audienceValidation = useSectionFormValidation(campaign, 'audience-targeting');
+  const assetsValidation = useSectionFormValidation(campaign, 'assets');
 
   // Optional: Enable debugging by uncommenting the code below
   // useEffect(() => {
@@ -639,6 +641,17 @@ export default function CampaignDetailPage() {
               Audience Targeting
               {getSectionIcon('audience-targeting')}
             </button>
+            <button 
+              onClick={() => setActiveSection('assets')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                activeSection === 'assets' 
+                  ? 'bg-primary/20 dark:bg-primary/30 text-primary-foreground dark:text-primary-100 border-primary/40 dark:border-primary/500 shadow-md' 
+                  : 'bg-muted/50 dark:bg-muted/30 text-muted-foreground dark:text-muted-foreground border-transparent hover:bg-muted dark:hover:bg-muted/50 hover:border-border'
+              }`}
+            >
+              <Upload className="h-4 w-4" />
+              Assets
+            </button>
 
           </div>
 
@@ -678,7 +691,7 @@ export default function CampaignDetailPage() {
               }`}
             >
               <MessageSquare className="h-4 w-4" />
-              Communication & Assets
+              Communication
             </button>
           </div>
 
@@ -811,6 +824,24 @@ export default function CampaignDetailPage() {
             cancelEditing={cancelEditing}
             setActiveSection={setActiveSection}
             audienceValidation={audienceValidation}
+          />
+        )}
+
+        {/* Assets Section */}
+        {activeSection === 'assets' && (
+          <Assets
+            campaign={campaign}
+            campaignId={campaignId}
+            sectionData={sectionData}
+            setSectionData={setSectionData}
+            editingSection={editingSection}
+            setEditingSection={setEditingSection}
+            savingSection={savingSection}
+            saveSection={saveSection}
+            startEditing={startEditing}
+            cancelEditing={cancelEditing}
+            setActiveSection={setActiveSection}
+            assetsValidation={assetsValidation}
           />
         )}
 
