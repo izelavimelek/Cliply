@@ -24,6 +24,118 @@ export interface Profile extends BaseDocument {
   };
 }
 
+// Campaign schema
+export interface Campaign extends BaseDocument {
+  brand_id: ObjectId;
+  
+  // Campaign Overview
+  title: string;
+  objective?: 'awareness' | 'engagement' | 'conversions' | 'ugc' | 'other';
+  platforms: string[]; // ['tiktok', 'youtube', 'instagram']
+  platform?: 'youtube' | 'tiktok' | 'instagram'; // Keep for backward compatibility
+  category?: string; // Gaming, Fashion, Food, etc.
+  description: string;
+  
+  // Budget & Timeline
+  total_budget?: number;
+  budget_spent?: number;
+  budget?: number;
+  rate_type?: 'per_thousand_views' | 'fixed_fee' | 'hybrid' | 'commission';
+  rate_per_thousand?: number;
+  fixed_fee?: number;
+  commission_percentage?: number;
+  base_rate?: number;
+  performance_bonus?: number;
+  start_date?: string;
+  end_date?: string;
+  submission_deadline?: string;
+  
+  // Content Requirements - Mandatory
+  deliverable_quantity?: {
+    clips?: number;
+    long_videos?: number;
+    images?: number;
+  };
+  required_elements?: {
+    logo_placement?: boolean;
+    logo_instructions?: string;
+    logo_duration?: number;
+    brand_mention?: boolean;
+    brand_phrase?: string;
+    mention_timing?: string;
+    call_to_action?: boolean;
+    cta_type?: string;
+    cta_text?: string;
+    hashtags?: string[];
+    hashtag_placement?: string;
+    additional_requirements?: string;
+  };
+  prohibited_content?: {
+    competitor_brands?: boolean;
+    profanity?: boolean;
+    political?: boolean;
+    custom?: string[];
+  };
+  
+  // Content Requirements - Optional
+  tone_style?: 'fun' | 'cinematic' | 'educational' | 'professional' | 'casual';
+  music_guidelines?: string;
+  example_references?: string[];
+  
+  // Audience Targeting - Mandatory
+  target_geography?: string[];
+  target_languages?: string[];
+  target_age_range?: {
+    min: number;
+    max: number;
+  };
+  
+  // Audience Targeting - Optional
+  target_gender?: 'all' | 'male' | 'female' | 'non_binary';
+  audience_interests?: string[];
+  
+  // Agreements & Compliance
+  usage_rights?: 'organic_only' | 'ads_allowed' | 'full_commercial';
+  exclusivity?: {
+    enabled: boolean;
+    category_exclusive?: boolean;
+  };
+  legal_confirmations?: {
+    platform_compliant?: boolean;
+    no_unlicensed_assets?: boolean;
+  };
+  
+  // Analytics (Post-launch)
+  analytics?: {
+    views?: number;
+    engagement_rate?: number;
+    ctr?: number;
+    cpm?: number;
+    cpc?: number;
+    cpa?: number;
+    roi?: number;
+    platform_breakdown?: Record<string, any>;
+  };
+  
+  // Communication & Assets
+  message_board_enabled?: boolean;
+  shared_files?: {
+    logos?: string[];
+    brand_kit?: string[];
+    example_content?: string[];
+  };
+  
+  // Legacy fields
+  type?: string;
+  status: 'draft' | 'active' | 'pending_budget' | 'paused' | 'completed';
+  budget_status: 'pending' | 'funded' | 'insufficient';
+  deadline?: Date;
+  rules?: string;
+  caption_code?: string;
+  requirements?: string;
+  tags?: string;
+}
+ 
 // Brand schema
 export interface Brand extends BaseDocument {
   owner_id: string;
@@ -34,21 +146,15 @@ export interface Brand extends BaseDocument {
   logo_url?: string;
 }
 
-// Campaign schema
-export interface Campaign extends BaseDocument {
-  brand_id: ObjectId;
-  title: string;
-  description: string;
-  platform: 'youtube' | 'tiktok' | 'instagram';
-  rate_per_thousand: number;
-  total_budget: number;
-  budget_spent?: number;
-  status: 'draft' | 'active' | 'paused' | 'completed';
-  start_date?: Date;
-  end_date?: Date;
-  rules?: string;
-  caption_code: string;
-  requirements?: string[];
+// Campaign Application schema (creators joining campaigns)
+export interface CampaignApplication extends BaseDocument {
+  campaign_id: ObjectId;
+  creator_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  applied_at: Date;
+  approved_at?: Date;
+  rejected_at?: Date;
+  notes?: string;
 }
 
 // Submission schema
@@ -118,6 +224,7 @@ export const Collections = {
   PROFILES: 'profiles',
   BRANDS: 'brands',
   CAMPAIGNS: 'campaigns',
+  CAMPAIGN_APPLICATIONS: 'campaign_applications',
   SUBMISSIONS: 'submissions',
   SNAPSHOTS: 'snapshots',
   PAYOUTS: 'payouts',

@@ -50,14 +50,33 @@ export async function POST(request: NextRequest) {
       exp: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
     }));
 
-    const user = {
-      id: profile.user_id,
-      email: profile.email,
-      role: profile.role,
-      is_admin: profile.is_admin,
-    };
+    // Create the response
+    const response = NextResponse.json({ 
+      user: {
+        id: profile.user_id,
+        email: profile.email,
+        role: profile.role,
+        is_admin: profile.is_admin,
+      },
+      token 
+    });
 
-    return NextResponse.json({ user, token });
+    // Set cookies
+    response.cookies.set('auth_token', token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+    
+    response.cookies.set('user_role', profile.role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+
+    return response;
   } catch (error) {
     console.error('Signin error:', error);
     

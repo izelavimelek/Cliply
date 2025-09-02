@@ -1,0 +1,2332 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Target, 
+  DollarSign, 
+  FileText, 
+  UserCheck, 
+  Shield, 
+  Users, 
+  BarChart3, 
+  MessageSquare,
+  Edit,
+  Play,
+  Pause,
+  Menu,
+  X,
+  Globe,
+  CheckCircle
+} from "lucide-react";
+import { useCampaignValidation, useSectionFormValidation } from "@/hooks/useCampaignValidation";
+import {
+  CampaignOverview,
+  BudgetTimeline,
+  ContentRequirements,
+  AudienceTargeting,
+  AgreementsCompliance,
+  Submissions,
+  Analytics,
+  CommunicationAssets,
+  Campaign,
+  Submission
+} from "@/components/features/campaigns";
+
+export default function CampaignDetailPage() {
+  const params = useParams();
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('campaign-overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+  const [sectionData, setSectionData] = useState<Partial<Campaign>>({});
+
+  const campaignId = params.id as string;
+
+  // Use campaign validation hook
+  const { sectionStatus, completionCount, isComplete, getSectionStyle, getSectionIcon } = useCampaignValidation(campaign);
+  
+  // Pre-calculate validation for all sections at component level
+  const overviewValidation = useSectionFormValidation(campaign, 'campaign-overview');
+  const budgetValidation = useSectionFormValidation(campaign, 'budget-timeline');
+  const contentValidation = useSectionFormValidation(campaign, 'content-requirements');
+  const audienceValidation = useSectionFormValidation(campaign, 'audience-targeting');
+  const complianceValidation = useSectionFormValidation(campaign, 'agreements-compliance');
+
+  useEffect(() => {
+    const fetchCampaignData = async () => {
+      try {
+        const [campaignRes, submissionsRes] = await Promise.all([
+          fetch(`/api/campaigns/${campaignId}`),
+          fetch(`/api/submissions?campaign_id=${campaignId}`)
+        ]);
+
+        if (campaignRes.ok) {
+          const campaignData = await campaignRes.json();
+          setCampaign(campaignData);
+          // Initialize sectionData with campaign data for validation
+          setSectionData(campaignData);
+        }
+
+        if (submissionsRes.ok) {
+          const submissionsData = await submissionsRes.json();
+          setSubmissions(submissionsData.items || []);
+        }
+      } catch (error) {
+        console.error('Error fetching campaign data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (campaignId) {
+      fetchCampaignData();
+    }
+  }, [campaignId]);
+
+  const updateCampaignStatus = async (newStatus: string) => {
+    setUpdating(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (res.ok) {
+        setCampaign(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+    } catch (error) {
+      console.error('Error updating campaign status:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const saveSection = async (sectionName: string, data: Partial<Campaign>) => {
+    setSavingSection(sectionName);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        const updatedCampaign = await res.json();
+        setCampaign(updatedCampaign);
+        setEditingSection(null);
+        setSectionData({});
+      } else {
+        throw new Error('Failed to save section');
+      }
+    } catch (error) {
+      console.error(`Error saving ${sectionName}:`, error);
+      alert(`Failed to save ${sectionName}. Please try again.`);
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
+  const startEditing = (sectionName: string) => {
+    setEditingSection(sectionName);
+    setSectionData(campaign || {});
+  };
+
+  const cancelEditing = () => {
+    setEditingSection(null);
+    setSectionData({});
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      case 'pending_budget': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'paused': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
+
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading campaign...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Campaign Not Found</h1>
+          <p className="text-muted-foreground mb-6">The campaign you're looking for doesn't exist or has been removed.</p>
+          <Link href="/brand/campaigns">
+            <Button>Back to Campaigns</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isActive = campaign.status === 'active';
+  const isDraft = campaign.status === 'draft';
+  const isPaused = campaign.status === 'paused';
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-4 left-64 z-50 p-2 bg-background border border-border rounded-md shadow-lg"
+      >
+        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+
+      {/* Secondary Campaign Sidebar - Fixed Position, Outside Main Content */}
+      <div className={`fixed inset-y-0 left-20 z-40 w-64 min-w-64 max-w-64 bg-muted/80 border-r border-border flex-shrink-0 h-screen flex flex-col shadow-lg transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        {/* Campaign Header */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="w-10 h-10 bg-gradient-to-br from-brand-blue to-brand-purple rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                <Target className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-base leading-tight truncate mb-1" title={campaign.title}>
+                  {campaign.title}
+                </h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge 
+                    className={`${getStatusColor(campaign.status)} text-xs font-medium px-2 py-0.5`}
+                    variant="secondary"
+                  >
+                    {campaign.status === 'pending_budget' ? 'Pending Budget' : campaign.status?.charAt(0).toUpperCase() + campaign.status?.slice(1)}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Globe className="h-3 w-3" />
+                  <span className="truncate">
+                    {campaign.platforms?.join(', ') || (campaign.platform ? campaign.platform.charAt(0).toUpperCase() + campaign.platform.slice(1) : 'Platform')}
+                  </span>
+                </div>
+                {/* Completion Progress */}
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Setup Progress</span>
+                    <span className={`font-medium ${isComplete ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                      {completionCount.completed}/{completionCount.total}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        isComplete 
+                          ? 'bg-green-500' 
+                          : 'bg-gradient-to-r from-brand-blue to-brand-purple'
+                      }`}
+                      style={{ width: `${(completionCount.completed / completionCount.total) * 100}%` }}
+                    />
+                  </div>
+                  {isComplete && (
+                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Campaign setup complete</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-colors flex-shrink-0 ml-2"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          {/* Campaign Stats */}
+          <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/50">
+            <div className="text-center py-1">
+              <div className="text-xs font-bold text-foreground">
+                ${campaign.total_budget?.toLocaleString() || '0'}
+              </div>
+              <div className="text-xs text-muted-foreground">Budget</div>
+            </div>
+            <div className="text-center py-1">
+              <div className="text-xs font-bold text-foreground">
+                {submissions.length}
+              </div>
+              <div className="text-xs text-muted-foreground">Submissions</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Campaign Navigation Sections */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 pb-6">
+          {/* Overview Section */}
+          <div className="space-y-1">
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Overview
+            </div>
+            <button 
+              onClick={() => setActiveSection('campaign-overview')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                getSectionStyle('campaign-overview', activeSection === 'campaign-overview')
+              }`}
+            >
+              <Target className="h-4 w-4" />
+              Campaign Overview
+              {getSectionIcon('campaign-overview')}
+            </button>
+            <button 
+              onClick={() => setActiveSection('budget-timeline')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                getSectionStyle('budget-timeline', activeSection === 'budget-timeline')
+              }`}
+            >
+              <DollarSign className="h-4 w-4" />
+              Budget & Timeline
+              {getSectionIcon('budget-timeline')}
+            </button>
+          </div>
+
+          {/* Content Section */}
+          <div className="space-y-1">
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Content & Requirements
+            </div>
+            <button 
+              onClick={() => setActiveSection('content-requirements')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                getSectionStyle('content-requirements', activeSection === 'content-requirements')
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              Content Requirements
+              {getSectionIcon('content-requirements')}
+            </button>
+            <button 
+              onClick={() => setActiveSection('audience-targeting')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                getSectionStyle('audience-targeting', activeSection === 'audience-targeting')
+              }`}
+            >
+              <UserCheck className="h-4 w-4" />
+              Audience Targeting
+              {getSectionIcon('audience-targeting')}
+            </button>
+            <button 
+              onClick={() => setActiveSection('agreements-compliance')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                getSectionStyle('agreements-compliance', activeSection === 'agreements-compliance')
+              }`}
+            >
+              <Shield className="h-4 w-4" />
+              Agreements & Compliance
+              {getSectionIcon('agreements-compliance')}
+            </button>
+          </div>
+
+          {/* Submissions & Analytics Section */}
+          <div className="space-y-1">
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Performance
+            </div>
+            <button 
+              onClick={() => setActiveSection('submissions')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                activeSection === 'submissions' 
+                  ? 'bg-card text-card-foreground border-border shadow-sm' 
+                  : 'hover:bg-muted border-transparent hover:border-border'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              Submissions ({submissions.length})
+            </button>
+            <button 
+              onClick={() => setActiveSection('analytics')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                activeSection === 'analytics' 
+                  ? 'bg-card text-card-foreground border-border shadow-sm' 
+                  : 'hover:bg-muted border-transparent hover:border-border'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </button>
+            <button 
+              onClick={() => setActiveSection('communication-assets')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                activeSection === 'communication-assets' 
+                  ? 'bg-card text-card-foreground border-border shadow-sm' 
+                  : 'hover:bg-muted border-transparent hover:border-border'
+              }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Communication & Assets
+            </button>
+          </div>
+
+          {/* Management Section */}
+          <div className="space-y-1">
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Management
+            </div>
+            <Link href={`/brand/campaigns/${campaignId}/edit`} className="block">
+              <button className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Edit Campaign
+              </button>
+            </Link>
+            
+            {isDraft && (
+              <button 
+                onClick={() => updateCampaignStatus('active')}
+                disabled={updating}
+                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
+              >
+                <Play className="h-4 w-4" />
+                Activate
+              </button>
+            )}
+            
+            {isActive && (
+              <button 
+                onClick={() => updateCampaignStatus('paused')}
+                disabled={updating}
+                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
+              >
+                <Pause className="h-4 w-4" />
+                Pause
+              </button>
+            )}
+            
+            {isPaused && (
+              <button 
+                onClick={() => updateCampaignStatus('active')}
+                disabled={updating}
+                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
+              >
+                <Play className="h-4 w-4" />
+                Resume
+              </button>
+            )}
+          </div>
+
+
+        </div>
+      </div>
+
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 left-20 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main Content Area - Positioned to account for secondary sidebar */}
+      <div className="ml-64 min-h-screen overflow-auto px-6 pb-6">
+
+        {/* Campaign Overview Section */}
+        {activeSection === 'campaign-overview' && (
+          <CampaignOverview
+            campaign={campaign}
+            campaignId={campaignId}
+            sectionData={sectionData}
+            setSectionData={setSectionData}
+            editingSection={editingSection}
+            setEditingSection={setEditingSection}
+            savingSection={savingSection}
+            saveSection={saveSection}
+            startEditing={startEditing}
+            cancelEditing={cancelEditing}
+            setActiveSection={setActiveSection}
+            overviewValidation={overviewValidation}
+            completionCount={completionCount}
+          />
+        )}
+          <div className="space-y-6">
+            {/* Full Width Top Bar */}
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 -mx-6 px-6 py-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20">
+                      <Target className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold tracking-tight">Campaign Overview</h2>
+                        {overviewValidation.isCompleted && (
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                            <CheckCircle className="h-4 w-4" />
+                            Complete
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-base text-muted-foreground mt-1">
+                        Set up the core details that will help creators understand and connect with your campaign
+                      </p>
+                    </div>
+                  </div>
+                  {overviewValidation.isCompleted && (
+                    <Button 
+                      onClick={() => setActiveSection('budget-timeline')}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <span className="text-sm font-medium">Next Step</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Full Width Progress Section */}
+            <div className="-mx-6 px-6 py-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-base">Setup Progress</h3>
+                  <span className="text-sm text-muted-foreground">
+                    {completionCount.completed}/{completionCount.total} sections completed
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${(completionCount.completed / completionCount.total) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="max-w-4xl mx-auto">
+              <div className="grid gap-8">
+                              {/* Campaign Basics */}
+                <Card className="overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-primary">1</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">Campaign Basics</h3>
+                          <p className="text-sm text-muted-foreground">Essential information about your campaign</p>
+                        </div>
+                      </div>
+                      {editingSection !== 'campaign-basics' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => startEditing('campaign-basics')}
+                          className="hover:bg-primary/10"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                      {editingSection === 'campaign-basics' ? (
+                        <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                          {/* Campaign Title */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="title" className="text-sm font-bold text-foreground">
+                                Campaign Title
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                              </div>
+                            </div>
+                            <Input
+                              id="title"
+                              value={sectionData.title || ''}
+                              onChange={(e) => setSectionData(prev => ({ ...prev, title: e.target.value }))}
+                              placeholder="Enter a compelling campaign title that attracts creators..."
+                              maxLength={100}
+                              className={`transition-all duration-300 ${overviewValidation.getFieldStyle(!sectionData.title)} focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                            />
+                            <div className="flex justify-between items-center">
+                              <p className="text-xs text-muted-foreground">
+                                Make it clear, specific, and engaging for creators
+                              </p>
+                              <span className={`text-xs font-medium ${
+                                (sectionData.title || '').length >= 80 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'
+                              }`}>
+                                {(sectionData.title || '').length}/100
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Campaign Description */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="description" className="text-sm font-bold text-foreground">
+                                Campaign Description
+                              </Label>
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                              </div>
+                            </div>
+                            <Textarea
+                              id="description"
+                              value={sectionData.description || ''}
+                              onChange={(e) => setSectionData(prev => ({ ...prev, description: e.target.value }))}
+                              placeholder="Describe what your campaign is about, what you're promoting, and what you want creators to showcase..."
+                              maxLength={500}
+                              rows={4}
+                              className={`transition-all duration-300 resize-none ${overviewValidation.getFieldStyle(!sectionData.description || (sectionData.description?.length || 0) < 10)} focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                            />
+                            <div className="flex justify-between items-center">
+                              <p className="text-xs text-muted-foreground">
+                                Explain your goals, target audience, and key messages
+                              </p>
+                              <span className={`text-xs font-medium ${
+                                (sectionData.description || '').length >= 400 ? 'text-orange-600 dark:text-orange-400' : 'text-muted-foreground'
+                              }`}>
+                                {(sectionData.description || '').length}/500
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-3 pt-6 border-t border-border/50">
+                            <Button 
+                              variant="outline" 
+                              onClick={cancelEditing}
+                              disabled={savingSection === 'campaign-basics'}
+                              className="hover:bg-muted/80 transition-colors"
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => saveSection('campaign-basics', {
+                                title: sectionData.title,
+                                description: sectionData.description
+                              })}
+                              disabled={savingSection === 'campaign-basics' || !sectionData.title || !sectionData.description}
+                              className="min-w-[120px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                            >
+                              {savingSection === 'campaign-basics' ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4 mr-2" />
+                                  Save Changes
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Campaign Title</Label>
+                            {!campaign?.title && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold leading-tight">
+                            {campaign?.title || (
+                              <span className="text-muted-foreground italic">Click edit to add a campaign title</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Description</Label>
+                            {!campaign?.description && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-base leading-relaxed">
+                            {campaign?.description || (
+                              <span className="text-muted-foreground italic">Click edit to add a campaign description</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+                              {/* Campaign Targeting */}
+                <Card className="overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-primary">2</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">Campaign Targeting</h3>
+                          <p className="text-sm text-muted-foreground">Define your campaign's focus and reach</p>
+                        </div>
+                      </div>
+                      {editingSection !== 'campaign-targeting' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => startEditing('campaign-targeting')}
+                          className="hover:bg-primary/10"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                                      {editingSection === 'campaign-targeting' ? (
+                    <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                      {/* Campaign Objective */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="objective" className="text-sm font-bold text-foreground">
+                            Campaign Objective
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                          </div>
+                        </div>
+                        <Select 
+                          value={sectionData.objective || ''} 
+                          onValueChange={(value) => setSectionData(prev => ({ ...prev, objective: value }))}
+                        >
+                          <SelectTrigger className={`transition-all duration-300 ${
+                            !sectionData.objective 
+                              ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                              : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                          } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}>
+                            <SelectValue placeholder="What's your main goal for this campaign?" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-border shadow-lg">
+                            <SelectItem value="awareness" className="hover:bg-muted/50">Brand Awareness</SelectItem>
+                            <SelectItem value="engagement" className="hover:bg-muted/50">Engagement & Community Building</SelectItem>
+                            <SelectItem value="conversions" className="hover:bg-muted/50">Sales & Conversions</SelectItem>
+                            <SelectItem value="ugc" className="hover:bg-muted/50">User Generated Content</SelectItem>
+                            <SelectItem value="product_launch" className="hover:bg-muted/50">Product Launch</SelectItem>
+                            <SelectItem value="other" className="hover:bg-muted/50">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          This helps creators understand how to align their content with your goals
+                        </p>
+                      </div>
+
+                      {/* Platforms */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-bold text-foreground">
+                            Target Platforms
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { name: 'TikTok', icon: '📱', color: 'bg-pink-500 hover:bg-pink-600' },
+                            { name: 'YouTube', icon: '📺', color: 'bg-red-500 hover:bg-red-600' },
+                            { name: 'Instagram', icon: '📷', color: 'bg-purple-500 hover:bg-purple-600' },
+                            { name: 'Twitter', icon: '🐦', color: 'bg-blue-500 hover:bg-blue-600' },
+                            { name: 'LinkedIn', icon: '💼', color: 'bg-blue-600 hover:bg-blue-700' },
+                            { name: 'Twitch', icon: '🎮', color: 'bg-purple-600 hover:bg-purple-700' }
+                          ].map((platform) => (
+                            <div key={platform.name} className="group">
+                              <div className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
+                                sectionData.platforms?.includes(platform.name.toLowerCase())
+                                  ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20'
+                                  : 'border-border hover:border-primary/40 hover:bg-muted/60 hover:shadow-md'
+                              }`}>
+                                <Checkbox
+                                  id={platform.name}
+                                  checked={sectionData.platforms?.includes(platform.name.toLowerCase()) || false}
+                                  onCheckedChange={(checked: boolean) => {
+                                    const currentPlatforms = sectionData.platforms || [];
+                                    const platformLower = platform.name.toLowerCase();
+                                    if (checked) {
+                                      setSectionData(prev => ({
+                                        ...prev,
+                                        platforms: [...currentPlatforms.filter(p => p !== platformLower), platformLower]
+                                      }));
+                                    } else {
+                                      setSectionData(prev => ({
+                                        ...prev,
+                                        platforms: currentPlatforms.filter(p => p !== platformLower)
+                                      }));
+                                    }
+                                  }}
+                                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:shadow-sm transition-all duration-200"
+                                />
+                                <div className="flex items-center gap-3 flex-1">
+                                  <span className="text-2xl filter drop-shadow-sm">{platform.icon}</span>
+                                  <Label htmlFor={platform.name} className="text-sm font-semibold cursor-pointer text-foreground group-hover:text-primary transition-colors">
+                                    {platform.name}
+                                  </Label>
+                                </div>
+                                {sectionData.platforms?.includes(platform.name.toLowerCase()) && (
+                                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Select all platforms where you want creators to post content
+                        </p>
+                      </div>
+
+                      {/* Category */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="category" className="text-sm font-bold text-foreground">
+                            Industry/Category
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                          </div>
+                        </div>
+                        <Select 
+                          value={sectionData.category || ''} 
+                          onValueChange={(value) => setSectionData(prev => ({ ...prev, category: value }))}
+                        >
+                          <SelectTrigger className={`transition-all duration-300 ${
+                            !sectionData.category 
+                              ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                              : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                          } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}>
+                            <SelectValue placeholder="What industry does your brand operate in?" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-border shadow-lg">
+                            <SelectItem value="gaming" className="hover:bg-muted/50">🎮 Gaming & Esports</SelectItem>
+                            <SelectItem value="fashion" className="hover:bg-muted/50">👗 Fashion & Apparel</SelectItem>
+                            <SelectItem value="food" className="hover:bg-muted/50">🍕 Food & Beverage</SelectItem>
+                            <SelectItem value="beauty" className="hover:bg-muted/50">💄 Beauty & Cosmetics</SelectItem>
+                            <SelectItem value="tech" className="hover:bg-muted/50">💻 Technology</SelectItem>
+                            <SelectItem value="fitness" className="hover:bg-muted/50">💪 Fitness & Health</SelectItem>
+                            <SelectItem value="travel" className="hover:bg-muted/50">✈️ Travel & Tourism</SelectItem>
+                            <SelectItem value="lifestyle" className="hover:bg-muted/50">🌟 Lifestyle</SelectItem>
+                            <SelectItem value="education" className="hover:bg-muted/50">📚 Education</SelectItem>
+                            <SelectItem value="finance" className="hover:bg-muted/50">💰 Finance & Fintech</SelectItem>
+                            <SelectItem value="entertainment" className="hover:bg-muted/50">🎬 Entertainment</SelectItem>
+                            <SelectItem value="other" className="hover:bg-muted/50">🔧 Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">
+                          This helps match your campaign with creators in your industry
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-6 border-t border-border/50">
+                        <Button 
+                          variant="outline" 
+                          onClick={cancelEditing}
+                          disabled={savingSection === 'campaign-targeting'}
+                          className="hover:bg-muted/80 transition-colors"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => saveSection('campaign-targeting', {
+                            objective: sectionData.objective,
+                            platforms: sectionData.platforms,
+                            category: sectionData.category
+                          })}
+                          disabled={savingSection === 'campaign-targeting' || !sectionData.objective || !sectionData.platforms?.length || !sectionData.category}
+                          className="min-w-[120px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          {savingSection === 'campaign-targeting' ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Campaign Objective</Label>
+                            {!campaign?.objective && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-base font-medium capitalize">
+                            {campaign?.objective?.replace('_', ' ') || (
+                              <span className="text-muted-foreground italic">Click edit to set objective</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Industry/Category</Label>
+                            {!campaign?.category && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-base font-medium capitalize">
+                            {campaign?.category || (
+                              <span className="text-muted-foreground italic">Click edit to select category</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-bold text-muted-foreground">Target Platforms</Label>
+                          {!campaign?.platforms?.length && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600">Required</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {campaign?.platforms?.length ? (
+                            campaign.platforms.map((platform) => (
+                              <Badge key={platform} variant="secondary" className="capitalize px-3 py-1">
+                                {platform}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground italic">Click edit to select platforms</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Budget & Timeline Section - Redesigned */}
+        {activeSection === 'budget-timeline' && (
+          <div className="space-y-6">
+            {/* Full Width Top Bar */}
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 -mx-6 px-6 py-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20">
+                      <DollarSign className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold tracking-tight">Budget & Timeline</h2>
+                        {[campaign?.total_budget, campaign?.rate_type, campaign?.start_date, campaign?.end_date, campaign?.submission_deadline].filter(Boolean).length === 5 && (
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                            <CheckCircle className="h-4 w-4" />
+                            Complete
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-base text-muted-foreground mt-1">
+                        Set your campaign budget and define key dates for creators
+                      </p>
+                    </div>
+                  </div>
+                  {[campaign?.total_budget, campaign?.rate_type, campaign?.start_date, campaign?.end_date, campaign?.submission_deadline].filter(Boolean).length === 5 && (
+                    <Button 
+                      onClick={() => setActiveSection('content-requirements')}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <span className="text-sm font-medium">Next Step</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Full Width Progress Section */}
+            <div className="-mx-6 px-6 py-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-base">Setup Progress</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {[campaign?.total_budget, campaign?.rate_type, campaign?.start_date, campaign?.end_date, campaign?.submission_deadline].filter(Boolean).length}/5 completed
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300" 
+                    style={{ 
+                      width: `${([campaign?.total_budget, campaign?.rate_type, campaign?.start_date, campaign?.end_date, campaign?.submission_deadline].filter(Boolean).length / 5) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="max-w-4xl mx-auto">
+              <div className="grid gap-8">
+                {/* Budget Configuration */}
+                <Card className="overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-primary">1</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">Budget Configuration</h3>
+                          <p className="text-sm text-muted-foreground">Set your campaign's financial parameters</p>
+                        </div>
+                      </div>
+                      {editingSection !== 'budget-config' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => startEditing('budget-config')}
+                          className="hover:bg-primary/10"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    {editingSection === 'budget-config' ? (
+                      <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                        {/* Total Budget */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="total_budget" className="text-sm font-bold text-foreground">
+                              Total Budget
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">$</span>
+                            <Input
+                              id="total_budget"
+                              type="number"
+                              value={sectionData.total_budget || ''}
+                              onChange={(e) => setSectionData(prev => ({ ...prev, total_budget: parseFloat(e.target.value) || 0 }))}
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              className={`pl-8 transition-all duration-300 ${
+                                !sectionData.total_budget 
+                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                                  : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                              } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Set your total campaign budget in USD
+                          </p>
+                        </div>
+
+                        {/* Rate Type */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="rate_type" className="text-sm font-bold text-foreground">
+                              Rate Structure
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                            </div>
+                          </div>
+                          <Select 
+                            value={sectionData.rate_type || ''} 
+                            onValueChange={(value) => setSectionData(prev => ({ ...prev, rate_type: value }))}
+                          >
+                            <SelectTrigger className={`transition-all duration-300 ${
+                              !sectionData.rate_type 
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                                : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                            } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}>
+                              <SelectValue placeholder="Select your rate structure..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border shadow-lg">
+                              <SelectItem value="per_thousand" className="hover:bg-muted/50">Per 1K Views ($/K)</SelectItem>
+                              <SelectItem value="fixed_fee" className="hover:bg-muted/50">Fixed Fee per Creator</SelectItem>
+                              <SelectItem value="hybrid" className="hover:bg-muted/50">Hybrid (Base + Performance)</SelectItem>
+                              <SelectItem value="commission" className="hover:bg-muted/50">Commission Based</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Choose how you'll compensate creators for their work
+                          </p>
+                        </div>
+
+                        {/* Rate Amount */}
+                        {sectionData.rate_type && (
+                          <div className="space-y-3">
+                            <Label htmlFor="rate_amount" className="text-sm font-bold text-foreground">
+                              Rate Amount
+                            </Label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">$</span>
+                              <Input
+                                id="rate_amount"
+                                type="number"
+                                value={sectionData.rate_per_thousand || sectionData.fixed_fee || ''}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  if (sectionData.rate_type === 'per_thousand') {
+                                    setSectionData(prev => ({ ...prev, rate_per_thousand: value }));
+                                  } else if (sectionData.rate_type === 'fixed_fee') {
+                                    setSectionData(prev => ({ ...prev, fixed_fee: value }));
+                                  }
+                                }}
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                className="pl-8 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {sectionData.rate_type === 'per_thousand' ? 'Amount per 1,000 views' : 
+                               sectionData.rate_type === 'fixed_fee' ? 'Fixed amount per creator' : 'Rate amount'}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-6 border-t border-border/50">
+                          <Button 
+                            variant="outline" 
+                            onClick={cancelEditing}
+                            disabled={savingSection === 'budget-config'}
+                            className="hover:bg-muted/80 transition-colors"
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={() => saveSection('budget-config', {
+                              total_budget: sectionData.total_budget,
+                              rate_type: sectionData.rate_type,
+                              rate_per_thousand: sectionData.rate_per_thousand,
+                              fixed_fee: sectionData.fixed_fee
+                            })}
+                            disabled={savingSection === 'budget-config' || !sectionData.total_budget || !sectionData.rate_type}
+                            className="min-w-[120px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                          >
+                            {savingSection === 'budget-config' ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-sm font-bold text-muted-foreground">Total Budget</Label>
+                              {!campaign?.total_budget && (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                  <span className="text-xs text-red-600">Required</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-lg font-semibold">
+                              {campaign?.total_budget ? `$${campaign.total_budget.toLocaleString()}` : (
+                                <span className="text-muted-foreground italic">Click edit to set budget</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label className="text-sm font-bold text-muted-foreground">Rate Structure</Label>
+                              {!campaign?.rate_type && (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                  <span className="text-xs text-red-600">Required</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-lg font-semibold capitalize">
+                              {campaign?.rate_type ? campaign.rate_type.replace('_', ' ') : (
+                                <span className="text-muted-foreground italic">Click edit to set rate</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        {campaign?.rate_per_thousand && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Rate Amount</Label>
+                            <p className="text-lg font-semibold">
+                              ${campaign.rate_per_thousand.toLocaleString()}
+                              {campaign.rate_type === 'per_thousand' ? ' per 1K views' : ''}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Timeline Configuration */}
+                <Card className="overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-4 py-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="text-sm font-semibold text-primary">2</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-lg">Timeline Configuration</h3>
+                          <p className="text-sm text-muted-foreground">Set key dates for your campaign</p>
+                        </div>
+                      </div>
+                      {editingSection !== 'timeline-config' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => startEditing('timeline-config')}
+                          className="hover:bg-primary/10"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <CardContent className="p-4">
+                    {editingSection === 'timeline-config' ? (
+                      <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
+                        {/* Campaign Dates */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="start_date" className="text-sm font-bold text-foreground">
+                                Start Date
+                              </Label>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                            </div>
+                          </div>
+                          <Input
+                            id="start_date"
+                            type="date"
+                            value={sectionData.start_date || ''}
+                            onChange={(e) => setSectionData(prev => ({ ...prev, start_date: e.target.value }))}
+                            min={new Date().toISOString().split('T')[0]}
+                            className={`transition-all duration-300 ${
+                              !sectionData.start_date 
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                                : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                            } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            When your campaign officially begins
+                          </p>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="end_date" className="text-sm font-bold text-foreground">
+                              End Date
+                            </Label>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                            </div>
+                          </div>
+                          <Input
+                            id="end_date"
+                            type="date"
+                            value={sectionData.end_date || ''}
+                            onChange={(e) => setSectionData(prev => ({ ...prev, end_date: e.target.value }))}
+                            min={sectionData.start_date || new Date().toISOString().split('T')[0]}
+                            className={`transition-all duration-300 ${
+                              !sectionData.end_date 
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-300 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                                : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                            } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            When your campaign officially ends
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Submission Deadline */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="submission_deadline" className="text-sm font-bold text-foreground">
+                            Submission Deadline
+                          </Label>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
+                          </div>
+                        </div>
+                        <Input
+                          id="submission_deadline"
+                          type="date"
+                          value={sectionData.submission_deadline || ''}
+                          onChange={(e) => setSectionData(prev => ({ ...prev, submission_deadline: e.target.value }))}
+                          max={sectionData.end_date || ''}
+                          className={`transition-all duration-300 ${
+                            !sectionData.submission_deadline 
+                              ? 'border-red-300 focus:border-red-400 focus:ring-red-200 dark:border-red-600 dark:focus:border-red-500 dark:focus:ring-red-900/20' 
+                              : 'border-green-300 focus:border-green-400 focus:ring-green-200 dark:border-green-600 dark:focus:border-green-500 dark:focus:ring-green-900/20'
+                          } focus:ring-2 focus:ring-offset-0 hover:border-primary/50`}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          When creators must submit their content (before campaign end)
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 pt-6 border-t border-border/50">
+                        <Button 
+                          variant="outline" 
+                          onClick={cancelEditing}
+                          disabled={savingSection === 'timeline-config'}
+                          className="hover:bg-muted/80 transition-colors"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => saveSection('timeline-config', {
+                            start_date: sectionData.start_date,
+                            end_date: sectionData.end_date,
+                            submission_deadline: sectionData.submission_deadline
+                          })}
+                          disabled={savingSection === 'timeline-config' || !sectionData.start_date || !sectionData.end_date || !sectionData.submission_deadline}
+                          className="min-w-[120px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          {savingSection === 'timeline-config' ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">Start Date</Label>
+                            {!campaign?.start_date && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold">
+                            {campaign?.start_date ? new Date(campaign.start_date).toLocaleDateString() : (
+                              <span className="text-muted-foreground italic">Click edit to set start date</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-muted-foreground">End Date</Label>
+                            {!campaign?.end_date && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span className="text-xs text-red-600">Required</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-lg font-semibold">
+                            {campaign?.end_date ? new Date(campaign.end_date).toLocaleDateString() : (
+                              <span className="text-muted-foreground italic">Click edit to set end date</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-bold text-muted-foreground">Submission Deadline</Label>
+                          {!campaign?.submission_deadline && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-xs text-red-600">Required</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-lg font-semibold">
+                          {campaign?.submission_deadline ? new Date(campaign.submission_deadline).toLocaleDateString() : (
+                            <span className="text-muted-foreground italic">Click edit to set deadline</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+        {/* Content Requirements Section */}
+        {activeSection === 'content-requirements' && (
+          <div className="space-y-6">
+            {/* Full Width Top Bar */}
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 -mx-6 px-6 py-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold tracking-tight">Content Requirements</h2>
+                        {contentValidation.isCompleted && (
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                            <CheckCircle className="h-4 w-4" />
+                            Complete
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-base text-muted-foreground mt-1">
+                        Define what creators need to include in their submissions and content guidelines
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => {
+                        const contentData = {
+                          deliverable_quantity: sectionData.deliverable_quantity,
+                          required_elements: sectionData.required_elements,
+                          prohibited_content: sectionData.prohibited_content,
+                          tone_style: sectionData.tone_style,
+                          music_guidelines: sectionData.music_guidelines,
+                          example_references: sectionData.example_references,
+                          requirements: sectionData.requirements,
+                          rules: sectionData.rules
+                        };
+                        saveSection('content-requirements', contentData);
+                      }}
+                      disabled={savingSection === 'content-requirements'}
+                    >
+                      {savingSection === 'content-requirements' ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                    {contentValidation.isCompleted && (
+                      <Button 
+                        onClick={() => setActiveSection('audience-targeting')}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        <span className="text-sm font-medium">Next Step</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Always show the form - no edit/display toggle */}
+            <div className="max-w-4xl mx-auto space-y-8">
+                {/* Mandatory: Deliverable Quantity */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      Deliverable Quantity
+                      <Badge variant="secondary" className="text-xs">Mandatory</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Specify how many pieces of content creators need to deliver
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clips">Short Clips ({'≤'}60s)</Label>
+                        <Input
+                          id="clips"
+                          type="number"
+                          min="0"
+                          placeholder="e.g., 3"
+                          value={sectionData.deliverable_quantity?.clips || ''}
+                          onChange={(e) => setSectionData({
+                            ...sectionData,
+                            deliverable_quantity: {
+                              ...sectionData.deliverable_quantity,
+                              clips: e.target.value ? parseInt(e.target.value) : undefined
+                            }
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="long_videos">Long Videos ({'>'}60s)</Label>
+                        <Input
+                          id="long_videos"
+                          type="number"
+                          min="0"
+                          placeholder="e.g., 1"
+                          value={sectionData.deliverable_quantity?.long_videos || ''}
+                          onChange={(e) => setSectionData({
+                            ...sectionData,
+                            deliverable_quantity: {
+                              ...sectionData.deliverable_quantity,
+                              long_videos: e.target.value ? parseInt(e.target.value) : undefined
+                            }
+                          })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="images">Static Images</Label>
+                        <Input
+                          id="images"
+                          type="number"
+                          min="0"
+                          placeholder="e.g., 5"
+                          value={sectionData.deliverable_quantity?.images || ''}
+                          onChange={(e) => setSectionData({
+                            ...sectionData,
+                            deliverable_quantity: {
+                              ...sectionData.deliverable_quantity,
+                              images: e.target.value ? parseInt(e.target.value) : undefined
+                            }
+                          })}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      At least one deliverable type is required. Specify the minimum quantity for each type.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Mandatory: Required Elements */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                      Required Elements
+                      <Badge variant="secondary" className="text-xs">Mandatory</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Select elements that creators must include in their content and provide specific instructions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Logo Placement */}
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="logo_placement"
+                            checked={sectionData.required_elements?.logo_placement || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              required_elements: {
+                                ...sectionData.required_elements,
+                                logo_placement: checked as boolean
+                              }
+                            })}
+                          />
+                          <div>
+                            <Label htmlFor="logo_placement" className="font-medium text-base">Logo Placement</Label>
+                            <p className="text-sm text-muted-foreground">Require creators to display your brand logo</p>
+                          </div>
+                        </div>
+                        <Badge variant={sectionData.required_elements?.logo_placement ? "default" : "outline"}>
+                          {sectionData.required_elements?.logo_placement ? "Required" : "Optional"}
+                        </Badge>
+                      </div>
+                      {sectionData.required_elements?.logo_placement && (
+                        <div className="pl-7 space-y-3 border-l-2 border-primary/20">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Logo placement instructions</Label>
+                            <Textarea
+                              placeholder="e.g., Logo should be visible in top-right corner for first 3 seconds, minimum 10% of screen size"
+                              value={sectionData.required_elements?.logo_instructions || ''}
+                              onChange={(e) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  logo_instructions: e.target.value
+                                }
+                              })}
+                              rows={2}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Logo duration (seconds)</Label>
+                            <Input
+                              type="number"
+                              placeholder="e.g., 5"
+                              min="1"
+                              max="60"
+                              value={sectionData.required_elements?.logo_duration || ''}
+                              onChange={(e) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  logo_duration: e.target.value ? parseInt(e.target.value) : undefined
+                                }
+                              })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Brand Mention */}
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="brand_mention"
+                            checked={sectionData.required_elements?.brand_mention || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              required_elements: {
+                                ...sectionData.required_elements,
+                                brand_mention: checked as boolean
+                              }
+                            })}
+                          />
+                          <div>
+                            <Label htmlFor="brand_mention" className="font-medium text-base">Brand Mention</Label>
+                            <p className="text-sm text-muted-foreground">Require verbal mention of your brand name</p>
+                          </div>
+                        </div>
+                        <Badge variant={sectionData.required_elements?.brand_mention ? "default" : "outline"}>
+                          {sectionData.required_elements?.brand_mention ? "Required" : "Optional"}
+                        </Badge>
+                      </div>
+                      {sectionData.required_elements?.brand_mention && (
+                        <div className="pl-7 space-y-3 border-l-2 border-primary/20">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Exact phrase to mention</Label>
+                            <Input
+                              placeholder="e.g., 'YourBrandName' or 'The amazing YourBrandName app'"
+                              value={sectionData.required_elements?.brand_phrase || ''}
+                              onChange={(e) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  brand_phrase: e.target.value
+                                }
+                              })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">When to mention</Label>
+                            <Select 
+                              value={sectionData.required_elements?.mention_timing || ''} 
+                              onValueChange={(value) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  mention_timing: value
+                                }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select timing" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="beginning">At the beginning (0-5s)</SelectItem>
+                                <SelectItem value="middle">In the middle</SelectItem>
+                                <SelectItem value="end">At the end</SelectItem>
+                                <SelectItem value="multiple">Multiple times</SelectItem>
+                                <SelectItem value="anytime">Anytime during video</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Call to Action */}
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="call_to_action"
+                            checked={sectionData.required_elements?.call_to_action || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              required_elements: {
+                                ...sectionData.required_elements,
+                                call_to_action: checked as boolean
+                              }
+                            })}
+                          />
+                          <div>
+                            <Label htmlFor="call_to_action" className="font-medium text-base">Call-to-Action (CTA)</Label>
+                            <p className="text-sm text-muted-foreground">Direct viewers to take a specific action</p>
+                          </div>
+                        </div>
+                        <Badge variant={sectionData.required_elements?.call_to_action ? "default" : "outline"}>
+                          {sectionData.required_elements?.call_to_action ? "Required" : "Optional"}
+                        </Badge>
+                      </div>
+                      {sectionData.required_elements?.call_to_action && (
+                        <div className="pl-7 space-y-3 border-l-2 border-primary/20">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">CTA Type</Label>
+                            <Select 
+                              value={sectionData.required_elements?.cta_type || ''} 
+                              onValueChange={(value) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  cta_type: value
+                                }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select CTA type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="visit_website">Visit Website</SelectItem>
+                                <SelectItem value="download_app">Download App</SelectItem>
+                                <SelectItem value="sign_up">Sign Up</SelectItem>
+                                <SelectItem value="follow_social">Follow on Social Media</SelectItem>
+                                <SelectItem value="use_code">Use Discount Code</SelectItem>
+                                <SelectItem value="subscribe">Subscribe</SelectItem>
+                                <SelectItem value="custom">Custom CTA</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">
+                              {sectionData.required_elements?.cta_type === 'custom' ? 'Custom CTA text' : 'Additional CTA details'}
+                            </Label>
+                            <Input
+                              placeholder={
+                                sectionData.required_elements?.cta_type === 'visit_website' ? 'e.g., Visit our website at...' :
+                                sectionData.required_elements?.cta_type === 'download_app' ? 'e.g., Download our app from...' :
+                                sectionData.required_elements?.cta_type === 'use_code' ? 'e.g., Use code SAVE20 for 20% off' :
+                                'e.g., Subscribe for more content like this'
+                              }
+                              value={sectionData.required_elements?.cta_text || ''}
+                              onChange={(e) => setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  cta_text: e.target.value
+                                }
+                              })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hashtags */}
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id="hashtags_required"
+                            checked={(sectionData.required_elements?.hashtags?.length || 0) > 0}
+                            onCheckedChange={(checked) => {
+                              if (!checked) {
+                                setSectionData({
+                                  ...sectionData,
+                                  required_elements: {
+                                    ...sectionData.required_elements,
+                                    hashtags: []
+                                  }
+                                });
+                              }
+                            }}
+                          />
+                          <div>
+                            <Label htmlFor="hashtags_required" className="font-medium text-base">Required Hashtags</Label>
+                            <p className="text-sm text-muted-foreground">Specify hashtags creators must include</p>
+                          </div>
+                        </div>
+                        <Badge variant={(sectionData.required_elements?.hashtags?.length || 0) > 0 ? "default" : "outline"}>
+                          {(sectionData.required_elements?.hashtags?.length || 0) > 0 ? "Required" : "Optional"}
+                        </Badge>
+                      </div>
+                      <div className="pl-7 space-y-3 border-l-2 border-primary/20">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Hashtags (one per line)</Label>
+                          <Textarea
+                            placeholder={`#YourBrandName\n#Campaign2024\n#YourProduct\n#BrandedContent`}
+                            value={sectionData.required_elements?.hashtags?.map(tag => tag.startsWith('#') ? tag : '#' + tag).join('\n') || ''}
+                            onChange={(e) => {
+                              const hashtags = e.target.value
+                                .split('\n')
+                                .map(tag => tag.trim())
+                                .filter(tag => tag.length > 0)
+                                .map(tag => tag.startsWith('#') ? tag : '#' + tag);
+                              setSectionData({
+                                ...sectionData,
+                                required_elements: {
+                                  ...sectionData.required_elements,
+                                  hashtags
+                                }
+                              });
+                            }}
+                            rows={4}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Enter one hashtag per line. # will be added automatically if not included.
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Hashtag placement</Label>
+                          <Select 
+                            value={sectionData.required_elements?.hashtag_placement || 'description'} 
+                            onValueChange={(value) => setSectionData({
+                              ...sectionData,
+                              required_elements: {
+                                ...sectionData.required_elements,
+                                hashtag_placement: value
+                              }
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select placement" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="description">In video description</SelectItem>
+                              <SelectItem value="caption">In video caption/overlay</SelectItem>
+                              <SelectItem value="comments">In comments</SelectItem>
+                              <SelectItem value="both">Description and caption</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Requirements */}
+                    <div className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <Label className="font-medium text-base">Additional Requirements</Label>
+                          <p className="text-sm text-muted-foreground">Any other specific elements you need</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Other required elements</Label>
+                          <Textarea
+                            placeholder="e.g., Must show product packaging, include website URL in description, mention specific features, etc."
+                            value={sectionData.required_elements?.additional_requirements || ''}
+                            onChange={(e) => setSectionData({
+                              ...sectionData,
+                              required_elements: {
+                                ...sectionData.required_elements,
+                                additional_requirements: e.target.value
+                              }
+                            })}
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Mandatory: Prohibited Content */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-destructive" />
+                      Prohibited Content
+                      <Badge variant="secondary" className="text-xs">Mandatory</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Content that creators must avoid in their submissions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="competitor_brands"
+                            checked={sectionData.prohibited_content?.competitor_brands || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              prohibited_content: {
+                                ...sectionData.prohibited_content,
+                                competitor_brands: checked as boolean
+                              }
+                            })}
+                          />
+                          <Label htmlFor="competitor_brands" className="font-medium">No Competitor Brands</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="profanity"
+                            checked={sectionData.prohibited_content?.profanity || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              prohibited_content: {
+                                ...sectionData.prohibited_content,
+                                profanity: checked as boolean
+                              }
+                            })}
+                          />
+                          <Label htmlFor="profanity" className="font-medium">No Profanity</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="political"
+                            checked={sectionData.prohibited_content?.political || false}
+                            onCheckedChange={(checked) => setSectionData({
+                              ...sectionData,
+                              prohibited_content: {
+                                ...sectionData.prohibited_content,
+                                political: checked as boolean
+                              }
+                            })}
+                          />
+                          <Label htmlFor="political" className="font-medium">No Political Content</Label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="custom_prohibited">Custom Prohibited Content</Label>
+                        <Textarea
+                          id="custom_prohibited"
+                          placeholder="List specific content to avoid (e.g., alcohol, gambling, specific topics)"
+                          value={sectionData.prohibited_content?.custom?.join(', ') || ''}
+                          onChange={(e) => {
+                            const custom = e.target.value.split(',').map(item => item.trim()).filter(item => item.length > 0);
+                            setSectionData({
+                              ...sectionData,
+                              prohibited_content: {
+                                ...sectionData.prohibited_content,
+                                custom
+                              }
+                            });
+                          }}
+                          rows={4}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Separate multiple items with commas
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Optional: Tone & Style */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-muted-foreground" />
+                      Tone & Style Guidelines
+                      <Badge variant="outline" className="text-xs">Optional</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Define the desired tone and style for content creation
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tone_style">Content Tone & Style</Label>
+                      <Select 
+                        value={sectionData.tone_style || ''} 
+                        onValueChange={(value) => setSectionData({...sectionData, tone_style: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a tone/style" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fun">Fun & Playful</SelectItem>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="casual">Casual & Relaxed</SelectItem>
+                          <SelectItem value="energetic">Energetic & Exciting</SelectItem>
+                          <SelectItem value="educational">Educational & Informative</SelectItem>
+                          <SelectItem value="cinematic">Cinematic & Dramatic</SelectItem>
+                          <SelectItem value="authentic">Authentic & Personal</SelectItem>
+                          <SelectItem value="minimalist">Minimalist & Clean</SelectItem>
+                          <SelectItem value="luxury">Luxury & Premium</SelectItem>
+                          <SelectItem value="trendy">Trendy & Current</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Optional: Music & Audio Guidelines */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                      Music & Audio Guidelines
+                      <Badge variant="outline" className="text-xs">Optional</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Specify audio requirements and music preferences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="music_guidelines">Music & Audio Instructions</Label>
+                      <Textarea
+                        id="music_guidelines"
+                        placeholder="e.g., Use upbeat music, no copyright music, background music volume should be low enough for voiceover, etc."
+                        value={sectionData.music_guidelines || ''}
+                        onChange={(e) => setSectionData({...sectionData, music_guidelines: e.target.value})}
+                        rows={4}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Optional: Example References */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-muted-foreground" />
+                      Example References
+                      <Badge variant="outline" className="text-xs">Optional</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Provide URLs to examples that creators can reference
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="example_references">Example URLs</Label>
+                      <Textarea
+                        id="example_references"
+                        placeholder="Enter URLs separated by new lines (e.g., https://youtube.com/watch?v=example1)"
+                        value={sectionData.example_references?.join('\n') || ''}
+                        onChange={(e) => {
+                          const references = e.target.value.split('\n').map(url => url.trim()).filter(url => url.length > 0);
+                          setSectionData({
+                            ...sectionData,
+                            example_references: references
+                          });
+                        }}
+                        rows={4}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter one URL per line. Include links to brand videos, competitor examples, or style references.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* General Requirements & Rules */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        General Requirements
+                      </CardTitle>
+                      <CardDescription>
+                        Additional requirements and specifications
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Label htmlFor="requirements">Requirements Details</Label>
+                        <Textarea
+                          id="requirements"
+                          placeholder="e.g., Must feature product in first 3 seconds, include website URL in description, minimum 1080p quality..."
+                          value={sectionData.requirements || ''}
+                          onChange={(e) => setSectionData({...sectionData, requirements: e.target.value})}
+                          rows={6}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-orange-500" />
+                        Rules & Guidelines
+                      </CardTitle>
+                      <CardDescription>
+                        Campaign rules and content guidelines
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Label htmlFor="rules">Rules & Guidelines</Label>
+                        <Textarea
+                          id="rules"
+                          placeholder="e.g., Content must be original, submissions due 48h before campaign end, no stock footage allowed..."
+                          value={sectionData.rules || ''}
+                          onChange={(e) => setSectionData({...sectionData, rules: e.target.value})}
+                          rows={6}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audience Targeting Section */}
+        {activeSection === 'audience-targeting' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <UserCheck className="h-6 w-6" />
+                  Audience Targeting
+                </h2>
+                <p className="text-muted-foreground mt-1">Define your target audience demographics and preferences</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => startEditing('audience-targeting')}>
+                  <Edit className="h-4 w-4 mr-2" />Edit
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-center py-8">
+              <UserCheck className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">Audience Targeting form will be implemented here</p>
+            </div>
+          </div>
+        )}
+
+        {/* Agreements & Compliance Section */}
+        {activeSection === 'agreements-compliance' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Shield className="h-6 w-6" />
+                  Agreements & Compliance
+                </h2>
+                <p className="text-muted-foreground mt-1">Set usage rights and legal requirements</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => startEditing('agreements-compliance')}>
+                  <Edit className="h-4 w-4 mr-2" />Edit
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-center py-8">
+              <Shield className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">Agreements & Compliance form will be implemented here</p>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Section */}
+        {activeSection === 'analytics' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6" />
+                  Campaign Analytics
+                </h2>
+                <p className="text-muted-foreground mt-1">Track performance metrics and insights</p>
+              </div>
+            </div>
+            
+            <div className="text-center py-8">
+              <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">Analytics dashboard will be implemented here</p>
+            </div>
+          </div>
+        )}
+
+        {/* Communication & Assets Section */}
+        {activeSection === 'communication-assets' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <MessageSquare className="h-6 w-6" />
+                  Communication & Assets
+                </h2>
+                <p className="text-muted-foreground mt-1">Manage communication and shared files</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => startEditing('communication-assets')}>
+                  <Edit className="h-4 w-4 mr-2" />Edit
+                </Button>
+              </div>
+            </div>
+            
+            <div className="text-center py-8">
+              <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-muted-foreground">Communication & Assets will be implemented here</p>
+            </div>
+          </div>
+        )}
+
+        {/* Submissions Section */}
+        {activeSection === 'submissions' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Users className="h-6 w-6" />
+                  Creator Submissions
+                </h2>
+                <p className="text-muted-foreground mt-1">Review and manage submissions from creators</p>
+              </div>
+            </div>
+            
+            <Card>
+              <CardContent className="pt-6">
+                {submissions.length > 0 ? (
+                  <div className="space-y-4">
+                    {submissions.map((submission) => (
+                      <div key={submission.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                              <Users className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{submission.creator_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Submitted {new Date(submission.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-sm font-medium">{submission.views.toLocaleString()} views</p>
+                            <Badge variant={submission.status === 'approved' ? 'default' : 'secondary'}>
+                              {submission.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />View
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <MessageSquare className="h-4 w-4 mr-2" />Message
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No submissions yet</h3>
+                    <p className="text-muted-foreground">
+                      Creators will submit their content here once they discover your campaign.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Legacy Requirements Section */}
+        {activeSection === 'requirements' && (
+          <div className="text-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Legacy Requirements</h3>
+            <p className="text-muted-foreground">This is the old requirements section - use Content Requirements instead</p>
+          </div>
+        )}
+
+        {/* End of main content sections */}
+      </div>
+    </>
+  );
+}

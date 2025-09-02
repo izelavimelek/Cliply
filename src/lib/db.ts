@@ -1,22 +1,30 @@
 import { getDatabase, Collections } from './mongodb';
-import { Campaign, Submission, Profile, Brand, Snapshot, Payout, AuditLog } from './mongodb/schemas';
+import { Campaign, Submission, Profile, Brand, Snapshot, Payout, AuditLog, CampaignApplication } from './mongodb/schemas';
 import { ObjectId } from 'mongodb';
 
-export async function createCampaign(campaignData: Omit<Campaign, '_id' | 'created_at' | 'updated_at' | 'caption_code'>): Promise<string> {
+export async function createCampaign(campaignData: any): Promise<string> {
   const db = await getDatabase();
   const campaignsCollection = db.collection(Collections.CAMPAIGNS);
+
+  console.log("createCampaign called with data:", JSON.stringify(campaignData, null, 2));
 
   const now = new Date();
   const captionCode = await generateCaptionCode();
   
+  // Convert brand_id string to ObjectId
   const campaign: Omit<Campaign, '_id'> = {
     ...campaignData,
+    brand_id: new ObjectId(campaignData.brand_id), // Convert string to ObjectId
     caption_code: captionCode,
     created_at: now,
     updated_at: now,
   };
 
+  console.log("Campaign data to be inserted:", JSON.stringify(campaign, null, 2));
+
   const result = await campaignsCollection.insertOne(campaign);
+  console.log("Campaign inserted with ID:", result.insertedId.toString());
+  
   return result.insertedId.toString();
 }
 
@@ -25,10 +33,33 @@ export async function getCampaigns(filters?: { status?: string; brand_id?: strin
   const campaignsCollection = db.collection(Collections.CAMPAIGNS);
 
   let query = {};
-  if (filters?.status) query = { ...query, status: filters.status };
-  if (filters?.brand_id) query = { ...query, brand_id: new ObjectId(filters.brand_id) };
+  
+  // Always filter out deleted campaigns unless explicitly requested
+  if (filters?.status === 'deleted') {
+    query = { ...query, status: 'deleted' };
+  } else {
+    query = { ...query, status: { $ne: 'deleted' } };
+  }
+  
+  if (filters?.status && filters.status !== 'deleted') {
+    query = { ...query, status: filters.status };
+  }
+  
+  if (filters?.brand_id) {
+    try {
+      query = { ...query, brand_id: new ObjectId(filters.brand_id) };
+      console.log("Converting brand_id to ObjectId:", filters.brand_id, "->", new ObjectId(filters.brand_id));
+    } catch (error) {
+      console.error("Error converting brand_id to ObjectId:", error);
+      return [];
+    }
+  }
+
+  console.log("getCampaigns query:", JSON.stringify(query, null, 2));
 
   const campaigns = await campaignsCollection.find(query).toArray();
+  console.log("getCampaigns found campaigns:", campaigns.length);
+  
   return campaigns as Campaign[];
 }
 
@@ -57,6 +88,60 @@ export async function updateCampaign(id: string, updateData: Partial<Campaign>):
   );
 
   return result as Campaign | null;
+}
+
+export async function deleteCampaign(id: string): Promise<boolean> {
+  const db = await getDatabase();
+  const campaignsCollection = db.collection(Collections.CAMPAIGNS);
+
+  try {
+    // Soft delete: update status to 'deleted' instead of removing the record
+    const result = await campaignsCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          status: 'deleted',
+          updated_at: new Date()
+        } 
+      },
+      { returnDocument: 'after' }
+    );
+    
+    return result !== null;
+  } catch (error) {
+    console.error("Error soft deleting campaign:", error);
+    return false;
+  }
+}
+
+export async function restoreCampaign(id: string, newStatus: string = 'draft'): Promise<Campaign | null> {
+  const db = await getDatabase();
+  const campaignsCollection = db.collection(Collections.CAMPAIGNS);
+
+  try {
+    // Validate the new status
+    const validStatuses = ['draft', 'active', 'pending_budget', 'paused', 'completed'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Invalid status: ${newStatus}`);
+    }
+
+    // Restore the campaign by changing status from 'deleted' to the new status
+    const result = await campaignsCollection.findOneAndUpdate(
+      { _id: new ObjectId(id), status: 'deleted' },
+      { 
+        $set: { 
+          status: newStatus,
+          updated_at: new Date()
+        } 
+      },
+      { returnDocument: 'after' }
+    );
+    
+    return result as Campaign | null;
+  } catch (error) {
+    console.error("Error restoring campaign:", error);
+    return null;
+  }
 }
 
 export async function createSubmission(submissionData: Omit<Submission, '_id' | 'created_at' | 'updated_at'>): Promise<string> {
@@ -205,4 +290,133 @@ export async function logAuditEvent(
   };
 
   await auditLogsCollection.insertOne(auditLog);
+}
+
+export async function getDeletedCampaigns(brand_id?: string): Promise<Campaign[]> {
+  const db = await getDatabase();
+  const campaignsCollection = db.collection(Collections.CAMPAIGNS);
+
+  let query: any = { status: 'deleted' };
+  
+  if (brand_id) {
+    try {
+      query = { ...query, brand_id: new ObjectId(brand_id) };
+    } catch (error) {
+      console.error("Error converting brand_id to ObjectId:", error);
+      return [];
+    }
+  }
+
+  console.log("getDeletedCampaigns query:", JSON.stringify(query, null, 2));
+
+  const campaigns = await campaignsCollection.find(query).toArray();
+  console.log("getDeletedCampaigns found campaigns:", campaigns.length);
+  
+  return campaigns as Campaign[];
+}
+
+// Campaign Application functions
+export async function createCampaignApplication(applicationData: Omit<CampaignApplication, '_id' | 'created_at' | 'updated_at' | 'applied_at'>): Promise<string> {
+  try {
+    const db = await getDatabase();
+    console.log('Database connected, accessing collection:', Collections.CAMPAIGN_APPLICATIONS);
+    
+    const applicationsCollection = db.collection(Collections.CAMPAIGN_APPLICATIONS);
+    console.log('Collection accessed successfully');
+
+    const now = new Date();
+    const application: Omit<CampaignApplication, '_id'> = {
+      ...applicationData,
+      applied_at: now,
+      created_at: now,
+      updated_at: now,
+      ...(applicationData.status === 'approved' && { approved_at: now }),
+    };
+
+    console.log('Attempting to insert application:', application);
+    const result = await applicationsCollection.insertOne(application);
+    console.log('Application inserted successfully:', result.insertedId);
+    return result.insertedId.toString();
+  } catch (error) {
+    console.error('Error creating campaign application:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
+    
+    // If collection doesn't exist, create it and try again
+    if (error instanceof Error && (error.message.includes('collection') || error.message.includes('Expected'))) {
+      try {
+        console.log('Attempting to create collection and retry...');
+        const db = await getDatabase();
+        await db.createCollection(Collections.CAMPAIGN_APPLICATIONS);
+        console.log('Collection created successfully');
+        
+        const applicationsCollection = db.collection(Collections.CAMPAIGN_APPLICATIONS);
+        const now = new Date();
+        const application: Omit<CampaignApplication, '_id'> = {
+          ...applicationData,
+          applied_at: now,
+          created_at: now,
+          updated_at: now,
+          ...(applicationData.status === 'approved' && { approved_at: now }),
+        };
+        
+        const result = await applicationsCollection.insertOne(application);
+        console.log('Application inserted successfully on retry:', result.insertedId);
+        return result.insertedId.toString();
+      } catch (retryError) {
+        console.error('Error on retry:', retryError);
+        throw new Error('Failed to create campaign application after retry');
+      }
+    }
+    throw new Error('Failed to create campaign application');
+  }
+}
+
+export async function getCampaignApplications(filters?: { creator_id?: string; campaign_id?: string; status?: string }): Promise<CampaignApplication[]> {
+  const db = await getDatabase();
+  const applicationsCollection = db.collection(Collections.CAMPAIGN_APPLICATIONS);
+
+  let query = {};
+  if (filters?.creator_id) query = { ...query, creator_id: filters.creator_id };
+  if (filters?.campaign_id) query = { ...query, campaign_id: new ObjectId(filters.campaign_id) };
+  if (filters?.status) query = { ...query, status: filters.status };
+
+  console.log('getCampaignApplications query:', query);
+
+  try {
+    const applications = await applicationsCollection.find(query).toArray();
+    console.log('getCampaignApplications found:', applications.length, 'applications');
+    return applications as CampaignApplication[];
+  } catch (error) {
+    // If collection doesn't exist, return empty array
+    console.log('Campaign applications collection not found, returning empty array');
+    return [];
+  }
+}
+
+export async function updateCampaignApplication(id: string, updateData: Partial<CampaignApplication>): Promise<CampaignApplication | null> {
+  const db = await getDatabase();
+  const applicationsCollection = db.collection(Collections.CAMPAIGN_APPLICATIONS);
+
+  const now = new Date();
+  const updatePayload = {
+    ...updateData,
+    updated_at: now,
+  };
+
+  try {
+    const result = await applicationsCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updatePayload },
+      { returnDocument: 'after' }
+    );
+
+    return result as CampaignApplication | null;
+  } catch (error) {
+    console.error('Error updating campaign application:', error);
+    return null;
+  }
 }

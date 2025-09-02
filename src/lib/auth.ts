@@ -43,6 +43,19 @@ export function useAuth() {
     }
   }, []);
 
+  const getDefaultRoute = (role?: string) => {
+    switch (role) {
+      case 'brand':
+        return '/brand';
+      case 'creator':
+        return '/creator';
+      case 'admin':
+        return '/admin';
+      default:
+        return '/auth';
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     const response = await fetch('/api/auth/signin', {
       method: 'POST',
@@ -63,13 +76,13 @@ export function useAuth() {
     return user;
   };
 
-  const signUp = async (email: string, password: string, role?: 'creator' | 'brand') => {
+  const signUp = async (email: string, password: string, name?: string, role?: 'creator' | 'brand') => {
     const response = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password, role }),
+      body: JSON.stringify({ email, password, name, role }),
     });
 
     if (!response.ok) {

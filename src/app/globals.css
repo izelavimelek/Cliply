@@ -127,7 +127,7 @@
     --secondary-foreground: 220 13% 18%; /* #111827 - almost black */
     --muted: 220 14% 96%;             /* #F9FAFB - off-white */
     --muted-foreground: 220 9% 46%;   /* #4B5563 - muted gray */
-    --accent: 220 14% 96%;            /* #F9FAFB - off-white */
+    --accent: 220 13% 85%;            /* #D1D5DB - darker gray */
     --accent-foreground: 220 13% 18%; /* #111827 - almost black */
     --destructive: 0 84% 60%;         /* #EF4444 - red */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF - white text on red */
@@ -145,25 +145,25 @@
   }
 
   .dark {
-    /* Dark Mode - Your Brand Colors */
-    --background: 222 84% 5%;         /* #0F172A - deep slate/navy */
+    /* Dark Mode - Softer Dark Gray Theme */
+    --background: 220 13% 12%;        /* #1F2937 - warm dark gray */
     --foreground: 220 14% 96%;        /* #F9FAFB - almost white */
-    --card: 217 33% 17%;              /* #1E293B - slate gray, elevated card */
+    --card: 220 13% 16%;              /* #374151 - elevated dark gray card */
     --card-foreground: 220 14% 96%;   /* #F9FAFB - almost white */
-    --popover: 217 33% 17%;           /* #1E293B - slate gray */
+    --popover: 220 13% 16%;           /* #374151 - dark gray */
     --popover-foreground: 220 14% 96%; /* #F9FAFB - almost white */
     --primary: 217 91% 60%;           /* #3B82F6 - bright blue pops against dark */
     --primary-foreground: 0 0% 100%;  /* #FFFFFF - white text on blue */
-    --secondary: 217 33% 17%;         /* #1E293B - slate gray */
+    --secondary: 220 13% 16%;         /* #374151 - dark gray */
     --secondary-foreground: 220 14% 96%; /* #F9FAFB - almost white */
-    --muted: 217 33% 17%;             /* #1E293B - slate gray */
-    --muted-foreground: 215 25% 27%;  /* #CBD5E1 - muted light gray-blue */
-    --accent: 217 33% 17%;            /* #1E293B - slate gray */
+    --muted: 220 13% 16%;             /* #374151 - dark gray */
+    --muted-foreground: 220 9% 65%;   /* #9CA3AF - softer gray text */
+    --accent: 220 13% 16%;            /* #374151 - dark gray */
     --accent-foreground: 220 14% 96%; /* #F9FAFB - almost white */
     --destructive: 0 84% 60%;         /* #F87171 - softer red for dark bg */
     --destructive-foreground: 0 0% 100%; /* #FFFFFF - white text on red */
-    --border: 215 25% 27%;            /* #334155 - subtle slate border */
-    --input: 215 25% 27%;             /* #334155 - subtle slate border */
+    --border: 220 13% 22%;            /* #4B5563 - subtle gray border */
+    --input: 220 13% 22%;             /* #4B5563 - subtle gray border */
     --ring: 217 91% 60%;              /* #3B82F6 - bright blue */
     --success: 160 84% 60%;           /* #34D399 - mint green */
     --warning: 38 92% 50%;            /* #F59E0B - amber */

@@ -5,7 +5,14 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-const options = {};
+const options = {
+  retryWrites: true,
+  w: 'majority' as const,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+};
 
 let client;
 let clientPromise: Promise<MongoClient>;
@@ -44,6 +51,7 @@ export const Collections = {
   PROFILES: 'profiles',
   BRANDS: 'brands',
   CAMPAIGNS: 'campaigns',
+  CAMPAIGN_APPLICATIONS: 'campaign_applications',
   SUBMISSIONS: 'submissions',
   SNAPSHOTS: 'snapshots',
   PAYOUTS: 'payouts',

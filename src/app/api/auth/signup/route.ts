@@ -5,9 +5,13 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, role } = await request.json();
+    const body = await request.json();
+    console.log('Signup request body:', body);
+    
+    const { email, password, name, role } = body;
 
     if (!email || !password) {
+      console.log('Missing email or password:', { email: !!email, password: !!password });
       return NextResponse.json(
         { message: 'Email and password are required' },
         { status: 400 }
@@ -15,6 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (password.length < 6) {
+      console.log('Password too short:', password.length);
       return NextResponse.json(
         { message: 'Password must be at least 6 characters long' },
         { status: 400 }
@@ -22,24 +27,28 @@ export async function POST(request: NextRequest) {
     }
 
     if (!role || !['creator', 'brand'].includes(role)) {
+      console.log('Invalid role:', role);
       return NextResponse.json(
         { message: 'Valid role (creator or brand) is required' },
         { status: 400 }
       );
     }
 
+    console.log('Validation passed, connecting to database...');
     const db = await getDatabase();
     const profilesCollection = db.collection(Collections.PROFILES);
 
     // Check if user already exists
     const existingProfile = await profilesCollection.findOne({ email });
     if (existingProfile) {
+      console.log('User already exists:', email);
       return NextResponse.json(
         { message: 'Email already exists' },
         { status: 409 }
       );
     }
 
+    console.log('Creating new user profile...');
     // Hash the password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -49,26 +58,30 @@ export async function POST(request: NextRequest) {
     
     // Create new profile
     const now = new Date();
-    const profile: Omit<Profile, '_id'> & { password: string } = {
+    const profile: Omit<Profile, '_id'> = {
       user_id: userId,
       email,
-      password: hashedPassword, // Add password field
+      password: hashedPassword,
+      display_name: name,
       role: role as 'creator' | 'brand',
       is_admin: false,
       created_at: now,
       updated_at: now,
     };
 
+    console.log('Profile to insert:', { ...profile, password: '[HIDDEN]' });
     const result = await profilesCollection.insertOne(profile);
 
     if (!result.acknowledged) {
       throw new Error('Failed to create user profile');
     }
 
+    console.log('User profile created successfully:', userId);
+
     // Generate simple token (in production, use proper JWT)
     const token = btoa(JSON.stringify({
       userId,
-      email,
+      email: profile.email,
       role: profile.role,
       isAdmin: profile.is_admin,
       exp: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
@@ -77,11 +90,32 @@ export async function POST(request: NextRequest) {
     const user = {
       id: userId,
       email: profile.email,
+      display_name: profile.display_name,
       role: profile.role,
       is_admin: profile.is_admin,
     };
 
-    return NextResponse.json({ user, token });
+    // Create response with cookies
+    const response = NextResponse.json({ user, token }, { status: 201 });
+
+    // Set authentication cookies
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    response.cookies.set('user_role', role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+    });
+
+    console.log('Signup completed successfully');
+    return response;
+
   } catch (error) {
     console.error('Signup error:', error);
     
