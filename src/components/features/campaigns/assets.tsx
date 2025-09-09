@@ -199,9 +199,6 @@ export function Assets({
             </div>
             {assetsValidation.isCompleted && (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="px-3 py-1">
-                  {assetsValidation.completedFields.length} of {assetsValidation.totalFields} sections complete
-                </Badge>
                 <Button 
                   variant="outline" 
                   size="sm"

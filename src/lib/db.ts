@@ -28,16 +28,20 @@ export async function createCampaign(campaignData: any): Promise<string> {
   return result.insertedId.toString();
 }
 
-export async function getCampaigns(filters?: { status?: string; brand_id?: string }): Promise<Campaign[]> {
+export async function getCampaigns(filters?: { status?: string; brand_id?: string; includeArchived?: boolean }): Promise<Campaign[]> {
   const db = await getDatabase();
   const campaignsCollection = db.collection(Collections.CAMPAIGNS);
 
   let query = {};
   
-  // Always filter out deleted campaigns unless explicitly requested
+  // Handle archived campaigns filtering
   if (filters?.status === 'deleted') {
     query = { ...query, status: 'deleted' };
+  } else if (filters?.includeArchived) {
+    // Include all campaigns (both active and archived)
+    // No status filter applied
   } else {
+    // Default behavior: exclude deleted campaigns
     query = { ...query, status: { $ne: 'deleted' } };
   }
   
@@ -47,11 +51,18 @@ export async function getCampaigns(filters?: { status?: string; brand_id?: strin
   
   if (filters?.brand_id) {
     try {
-      query = { ...query, brand_id: new ObjectId(filters.brand_id) };
-      console.log("Converting brand_id to ObjectId:", filters.brand_id, "->", new ObjectId(filters.brand_id));
+      // Check if brand_id is a valid ObjectId string
+      if (ObjectId.isValid(filters.brand_id)) {
+        query = { ...query, brand_id: new ObjectId(filters.brand_id) };
+        console.log("Converting brand_id to ObjectId:", filters.brand_id, "->", new ObjectId(filters.brand_id));
+      } else {
+        console.log("Invalid brand_id format, skipping brand filter:", filters.brand_id);
+        // Don't add brand_id filter if it's not a valid ObjectId
+      }
     } catch (error) {
       console.error("Error converting brand_id to ObjectId:", error);
-      return [];
+      // Don't return empty array, just skip the brand_id filter
+      console.log("Skipping brand_id filter due to conversion error");
     }
   }
 
@@ -170,6 +181,29 @@ export async function getSubmissions(filters?: { creator_id?: string; campaign_i
 
   const submissions = await submissionsCollection.find(query).toArray();
   return submissions as Submission[];
+}
+
+export async function updateSubmission(id: string, updateData: Partial<Submission>): Promise<Submission | null> {
+  const db = await getDatabase();
+  const submissionsCollection = db.collection(Collections.SUBMISSIONS);
+
+  try {
+    const result = await submissionsCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          ...updateData,
+          updated_at: new Date()
+        } 
+      },
+      { returnDocument: 'after' }
+    );
+    
+    return result as Submission | null;
+  } catch (error) {
+    console.error('Error updating submission:', error);
+    return null;
+  }
 }
 
 export async function createProfile(profileData: Omit<Profile, '_id' | 'created_at' | 'updated_at'>): Promise<string> {

@@ -1,7 +1,36 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { submissionCreateSchema } from "@/lib/validators";
 import { createSubmission, getSubmissions } from "@/lib/db";
 import { logAuditEvent } from "@/lib/db";
+
+// Helper function to get user from auth token
+async function getUserFromToken(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+  
+  try {
+    const decoded = JSON.parse(atob(token));
+    
+    // Check if token is expired
+    if (decoded.exp < Date.now()) {
+      return null;
+    }
+
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      isAdmin: decoded.isAdmin,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -9,13 +38,80 @@ export async function GET(request: Request) {
     const campaignId = searchParams.get("campaignId");
     const creatorId = searchParams.get("creatorId");
     const status = searchParams.get("status");
+    const role = searchParams.get("role");
     
-    // TODO: Get creatorId from auth context when mine=true
-    const submissions = await getSubmissions({
-      campaignId: campaignId || undefined,
-      creatorId: creatorId || undefined,
-      status: status || undefined,
-    });
+    // Get user from auth token for role-based filtering
+    const user = await getUserFromToken(request as NextRequest);
+    
+    let submissions;
+    
+    if (role === "brand" && user?.role === "brand") {
+      // For brand role, get all submissions for campaigns owned by this brand
+      const { getCampaigns } = await import("@/lib/db");
+      
+      // Get the brand ID from the user's brand profile
+      let brandId = user.userId;
+      
+      try {
+        const authHeader = request.headers.get('authorization');
+        const brandResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/brands/my-brand`, {
+          headers: {
+            'Authorization': authHeader || '',
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (brandResponse.ok) {
+          const brandData = await brandResponse.json();
+          brandId = brandData.id || brandData._id || user.userId;
+        }
+      } catch (error) {
+        console.log('Could not fetch brand data, using user ID:', error);
+      }
+      
+      // Only proceed if we have a valid brand ID (not the user ID)
+      if (brandId === user.userId) {
+        console.log('No brand found for user, returning empty submissions');
+        return NextResponse.json({ 
+          items: [], 
+          page: 1, 
+          total: 0 
+        });
+      }
+      
+      const brandCampaigns = await getCampaigns({ brand_id: brandId });
+      const campaignIds = brandCampaigns.map(c => c._id.toString());
+      
+      console.log('Debug - Brand user ID:', user.userId);
+      console.log('Debug - Brand ID used:', brandId);
+      console.log('Debug - Brand campaigns found:', brandCampaigns.length);
+      console.log('Debug - Campaign IDs:', campaignIds);
+      
+      // Get all submissions and filter by campaign IDs
+      const allSubmissions = await getSubmissions({
+        campaignId: campaignId || undefined,
+        creatorId: creatorId || undefined,
+        status: status || undefined,
+      });
+      
+      console.log('Debug - All submissions found:', allSubmissions.length);
+      
+      // Filter submissions to only include those from brand's campaigns
+      submissions = allSubmissions.filter(submission => {
+        const submissionCampaignId = submission.campaign_id.toString();
+        const isMatch = campaignIds.includes(submissionCampaignId);
+        return isMatch;
+      });
+      
+      console.log('Debug - Filtered submissions for brand:', submissions.length);
+    } else {
+      // Default behavior - get submissions based on filters
+      submissions = await getSubmissions({
+        campaignId: campaignId || undefined,
+        creatorId: creatorId || undefined,
+        status: status || undefined,
+      });
+    }
     
     return NextResponse.json({ 
       items: submissions, 
@@ -31,36 +127,76 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const json = await request.json();
-    const parsed = submissionCreateSchema.safeParse(json);
-    
-    if (!parsed.success) {
+    // Authenticate user
+    const user = await getUserFromToken(request);
+    if (!user) {
       return NextResponse.json(
-        { error: parsed.error.format() }, 
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    if (user.role !== "creator") {
+      return NextResponse.json(
+        { error: "Access denied. Creator role required." },
+        { status: 403 }
+      );
+    }
+
+    const json = await request.json();
+    
+    // Enhanced validation for submission data
+    const submissionData = {
+      campaign_id: json.campaign_id,
+      post_url: json.post_url || '',
+      media_urls: json.media_urls || [],
+    };
+
+    // Validate required fields
+    if (!submissionData.campaign_id) {
+      return NextResponse.json(
+        { error: "Campaign ID is required" }, 
+        { status: 400 }
+      );
+    }
+
+    if (!submissionData.post_url && submissionData.media_urls.length === 0) {
+      return NextResponse.json(
+        { error: "Either post URL or media files are required" }, 
         { status: 400 }
       );
     }
     
-    // TODO: Get creatorId from auth context
+    // Use actual user ID instead of dummy
     const submission = await createSubmission({
-      ...parsed.data,
-      creator_id: "temp-creator-id", // TODO: Replace with actual user ID
+      ...submissionData,
+      creator_id: user.userId,
     });
     
     // Log audit event
     await logAuditEvent(
-      null, // TODO: Get from auth context
+      user.userId,
       "submission_created",
       { 
-        submission_id: submission.id, 
-        campaign_id: submission.campaign_id,
-        post_url: submission.post_url
+        submission_id: submission, 
+        campaign_id: submissionData.campaign_id,
+        post_url: submissionData.post_url,
+        media_count: submissionData.media_urls.length
       }
     );
     
-    return NextResponse.json(submission, { status: 201 });
+    return NextResponse.json({ 
+      id: submission,
+      campaign_id: submissionData.campaign_id,
+      creator_id: user.userId,
+      post_url: submissionData.post_url,
+      media_urls: submissionData.media_urls,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating submission:", error);
     return NextResponse.json(

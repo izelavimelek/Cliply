@@ -48,6 +48,7 @@ export default function CampaignDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('campaign-overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mainSidebarCollapsed, setMainSidebarCollapsed] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [sectionData, setSectionData] = useState<Partial<Campaign>>({});
@@ -190,6 +191,19 @@ export default function CampaignDetailPage() {
   //   }
   // }, [campaign, sectionStatus, completionCount]);
 
+  // Listen for main sidebar state changes
+  useEffect(() => {
+    const handleSidebarStateChange = (event: CustomEvent) => {
+      setMainSidebarCollapsed(event.detail.collapsed);
+    };
+
+    window.addEventListener('sidebar-state-change', handleSidebarStateChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('sidebar-state-change', handleSidebarStateChange as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     const fetchCampaignData = async () => {
       try {
@@ -277,9 +291,8 @@ export default function CampaignDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       case 'draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-      case 'pending_budget': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
       case 'paused': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
       case 'completed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
@@ -316,7 +329,7 @@ export default function CampaignDetailPage() {
   const isPaused = campaign.status === 'paused';
 
   return (
-    <>
+    <div className="flex h-screen">
       {/* Custom Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
@@ -455,13 +468,13 @@ export default function CampaignDetailPage() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-64 z-50 p-2 bg-background border border-border rounded-md shadow-lg"
+        className="lg:hidden fixed top-4 left-20 z-50 p-2 bg-background border border-border rounded-md shadow-lg transition-all duration-300"
       >
         {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Secondary Campaign Sidebar - Fixed Position, Outside Main Content */}
-      <div className={`fixed inset-y-0 left-20 z-40 w-64 min-w-64 max-w-64 bg-muted/80 border-r border-border flex-shrink-0 h-screen flex flex-col shadow-lg transform transition-transform duration-300 ease-in-out ${
+      {/* Campaign Sidebar - Simple column layout */}
+      <div className={`w-80 bg-muted/80 border-r border-border flex-shrink-0 h-screen flex flex-col shadow-lg transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         {/* Campaign Header */}
@@ -520,7 +533,7 @@ export default function CampaignDetailPage() {
                     className={`${getStatusColor(campaign.status)} text-xs font-medium px-2 py-0.5`}
                     variant="secondary"
                   >
-                    {campaign.status === 'pending_budget' ? 'Pending Budget' : campaign.status?.charAt(0).toUpperCase() + campaign.status?.slice(1)}
+                    {campaign.status?.charAt(0).toUpperCase() + campaign.status?.slice(1)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
@@ -746,13 +759,13 @@ export default function CampaignDetailPage() {
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div 
-          className="lg:hidden fixed inset-0 left-20 bg-black/50 z-30"
+          className="lg:hidden fixed inset-0 bg-black/50 z-20 transition-all duration-300 left-80"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Main Content Area - Positioned to account for secondary sidebar */}
-      <div className="ml-64 min-h-screen overflow-auto px-6 pb-6">
+      {/* Main Content Area - Simple flex column */}
+      <div className="flex-1 min-h-screen overflow-auto px-6 pb-6">
 
         {/* Campaign Overview Section */}
         {activeSection === 'campaign-overview' && (
@@ -901,6 +914,6 @@ export default function CampaignDetailPage() {
 
         {/* End of main content sections */}
       </div>
-    </>
+    </div>
   );
 }

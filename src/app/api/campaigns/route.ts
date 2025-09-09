@@ -58,10 +58,15 @@ export async function GET(request: NextRequest) {
     console.log("GET /api/campaigns - Search params:", { platform, status, role });
     
     // Build filters
-    const filters: { status?: string; platform?: string; brand_id?: string } = {};
+    const filters: { status?: string; platform?: string; brand_id?: string; includeArchived?: boolean } = {};
     
     if (status) filters.status = status;
     if (platform) filters.platform = platform;
+    
+    // If no specific status is requested, include archived campaigns
+    if (!status) {
+      filters.includeArchived = true;
+    }
     
     // If role is brand, get the brand ID from the authenticated user
     if (role === "brand") {
@@ -160,10 +165,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the authenticated user's brand ID
+    // Use the authenticated user's brand ID and ensure draft status
     const campaignData = {
       ...parsed.data,
       brand_id: brandId,
+      status: parsed.data.status || "draft", // Default to draft if not specified
     };
 
     console.log("Using authenticated brand_id:", brandId);

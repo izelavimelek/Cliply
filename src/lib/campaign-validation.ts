@@ -310,6 +310,7 @@ export function getCampaignSectionCompletionStatus(data: CampaignData) {
     'content-requirements': validateContentRequirements(data),
     'audience-targeting': validateAudienceTargeting(data),
     'agreements-compliance': validateAgreementsCompliance(data),
+    'assets': true, // Assets section is always considered complete for now
   };
 }
 

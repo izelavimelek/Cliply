@@ -14,9 +14,7 @@ export default function BrandLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  
-  // Check if we're on a campaign detail page to determine sidebar collapse
-  const isCampaignDetailPage = pathname.includes('/brand/campaigns/') && pathname !== '/brand/campaigns' && pathname !== '/brand/campaigns/new';
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Check if we're on the new campaign page - don't render sidebar for it
   const isNewCampaignPage = pathname === '/brand/campaigns/new';
@@ -26,6 +24,19 @@ export default function BrandLayout({
       router.push("/auth");
     }
   }, [user, loading, router]);
+
+  // Listen for sidebar state changes
+  useEffect(() => {
+    const handleSidebarStateChange = (event: CustomEvent) => {
+      setSidebarCollapsed(event.detail.collapsed);
+    };
+
+    window.addEventListener('sidebar-state-change', handleSidebarStateChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('sidebar-state-change', handleSidebarStateChange as EventListener);
+    };
+  }, []);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -43,12 +54,12 @@ export default function BrandLayout({
   return (
     <div className="min-h-screen bg-background flex">
       {/* Main Sidebar */}
-      <div className="fixed left-0 top-0 h-full z-40">
+      <div className="fixed left-0 top-0 h-full z-50">
         <Sidebar userRole="brand" />
       </div>
 
-      {/* Main Content - No padding here, let children handle their own layout */}
-      <main className={`flex-1 transition-all duration-300 ${isCampaignDetailPage ? 'ml-16' : 'ml-64'}`}>
+      {/* Main Content - Responsive margin based on sidebar state */}
+      <main className={`flex-1 transition-all duration-300 relative z-10 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {children}
       </main>
     </div>

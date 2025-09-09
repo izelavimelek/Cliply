@@ -98,19 +98,36 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={profile.name} />
+                  <Input 
+                    id="name" 
+                    value={profile.name} 
+                    onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={profile.email} />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={profile.email} 
+                    onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" value={profile.phone} />
+                  <Input 
+                    id="phone" 
+                    value={profile.phone} 
+                    onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
-                  <Input id="location" value={profile.location} />
+                  <Input 
+                    id="location" 
+                    value={profile.location} 
+                    onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
+                  />
                 </div>
               </div>
 
@@ -119,6 +136,7 @@ export default function SettingsPage() {
                 <Textarea 
                   id="bio" 
                   value={profile.bio}
+                  onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
                   rows={4}
                   placeholder="Tell us about yourself..."
                 />
@@ -126,7 +144,12 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="website">Website</Label>
-                <Input id="website" value={profile.website} placeholder="https://yourwebsite.com" />
+                <Input 
+                  id="website" 
+                  value={profile.website} 
+                  onChange={(e) => setProfile(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://yourwebsite.com" 
+                />
               </div>
 
               <Button className="flex items-center gap-2">
@@ -148,19 +171,39 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="youtube">YouTube</Label>
-                <Input id="youtube" value={socialLinks.youtube} placeholder="https://youtube.com/@yourchannel" />
+                <Input 
+                  id="youtube" 
+                  value={socialLinks.youtube} 
+                  onChange={(e) => setSocialLinks(prev => ({ ...prev, youtube: e.target.value }))}
+                  placeholder="https://youtube.com/@yourchannel" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tiktok">TikTok</Label>
-                <Input id="tiktok" value={socialLinks.tiktok} placeholder="https://tiktok.com/@yourusername" />
+                <Input 
+                  id="tiktok" 
+                  value={socialLinks.tiktok} 
+                  onChange={(e) => setSocialLinks(prev => ({ ...prev, tiktok: e.target.value }))}
+                  placeholder="https://tiktok.com/@yourusername" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram</Label>
-                <Input id="instagram" value={socialLinks.instagram} placeholder="https://instagram.com/yourusername" />
+                <Input 
+                  id="instagram" 
+                  value={socialLinks.instagram} 
+                  onChange={(e) => setSocialLinks(prev => ({ ...prev, instagram: e.target.value }))}
+                  placeholder="https://instagram.com/yourusername" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="twitter">Twitter/X</Label>
-                <Input id="twitter" value={socialLinks.twitter} placeholder="https://twitter.com/yourusername" />
+                <Input 
+                  id="twitter" 
+                  value={socialLinks.twitter} 
+                  onChange={(e) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
+                  placeholder="https://twitter.com/yourusername" 
+                />
               </div>
               <Button className="flex items-center gap-2">
                 <Save className="h-4 w-4" />
@@ -185,35 +228,50 @@ export default function SettingsPage() {
                     <Label>Email Notifications</Label>
                     <p className="text-sm text-muted-foreground">Receive notifications via email</p>
                   </div>
-                  <Switch checked={notifications.emailNotifications} />
+                  <Switch 
+                    checked={notifications.emailNotifications} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, emailNotifications: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Campaign Updates</Label>
                     <p className="text-sm text-muted-foreground">Get notified about campaign status changes</p>
                   </div>
-                  <Switch checked={notifications.campaignUpdates} />
+                  <Switch 
+                    checked={notifications.campaignUpdates} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, campaignUpdates: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Payment Notifications</Label>
                     <p className="text-sm text-muted-foreground">Get notified when payments are processed</p>
                   </div>
-                  <Switch checked={notifications.paymentNotifications} />
+                  <Switch 
+                    checked={notifications.paymentNotifications} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, paymentNotifications: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Weekly Reports</Label>
                     <p className="text-sm text-muted-foreground">Receive weekly performance reports</p>
                   </div>
-                  <Switch checked={notifications.weeklyReports} />
+                  <Switch 
+                    checked={notifications.weeklyReports} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, weeklyReports: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Marketing Emails</Label>
                     <p className="text-sm text-muted-foreground">Receive promotional emails and updates</p>
                   </div>
-                  <Switch checked={notifications.marketingEmails} />
+                  <Switch 
+                    checked={notifications.marketingEmails} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, marketingEmails: checked }))}
+                  />
                 </div>
               </div>
               <Button className="flex items-center gap-2">
@@ -236,7 +294,10 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Profile Visibility</Label>
-                  <Select value={privacy.profileVisibility}>
+                  <Select 
+                    value={privacy.profileVisibility}
+                    onValueChange={(value) => setPrivacy(prev => ({ ...prev, profileVisibility: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -252,21 +313,30 @@ export default function SettingsPage() {
                     <Label>Show Earnings</Label>
                     <p className="text-sm text-muted-foreground">Display earnings on your profile</p>
                   </div>
-                  <Switch checked={privacy.showEarnings} />
+                  <Switch 
+                    checked={privacy.showEarnings} 
+                    onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, showEarnings: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Allow Messages</Label>
                     <p className="text-sm text-muted-foreground">Let brands contact you directly</p>
                   </div>
-                  <Switch checked={privacy.allowMessages} />
+                  <Switch 
+                    checked={privacy.allowMessages} 
+                    onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, allowMessages: checked }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Data Sharing</Label>
                     <p className="text-sm text-muted-foreground">Share analytics data with brands</p>
                   </div>
-                  <Switch checked={privacy.dataSharing} />
+                  <Switch 
+                    checked={privacy.dataSharing} 
+                    onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, dataSharing: checked }))}
+                  />
                 </div>
               </div>
               <Button className="flex items-center gap-2">

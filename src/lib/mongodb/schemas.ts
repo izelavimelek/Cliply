@@ -127,7 +127,7 @@ export interface Campaign extends BaseDocument {
   
   // Legacy fields
   type?: string;
-  status: 'draft' | 'active' | 'pending_budget' | 'paused' | 'completed';
+  status: 'draft' | 'active' | 'paused' | 'completed';
   budget_status: 'pending' | 'funded' | 'insufficient';
   deadline?: Date;
   rules?: string;
@@ -162,6 +162,7 @@ export interface Submission extends BaseDocument {
   campaign_id: ObjectId;
   creator_id: string;
   post_url: string;
+  media_urls?: string[]; // Array of media file URLs
   status: 'pending' | 'approved' | 'rejected';
   views?: number;
   earnings?: number;

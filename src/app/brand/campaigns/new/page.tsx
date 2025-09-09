@@ -146,7 +146,7 @@ export default function NewCampaignPage() {
         ...values,
         platform: values.platforms[0], // For backward compatibility
         created_at: new Date().toISOString(),
-        status: "active", // Set status to active when submitting
+        status: "draft", // Set status to draft when creating
       };
 
       console.log("Sending campaign data:", campaignData);

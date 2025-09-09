@@ -5,8 +5,11 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Eye, Edit, Trash2, MoreHorizontal, Target } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, MoreHorizontal, Target, RotateCcw } from "lucide-react";
 import Link from "next/link";
+import { useBrandProfileModal } from "@/hooks/useBrandProfileModal";
+import { BrandProfileModal } from "@/components/ui/brand-profile-modal";
+import { needsBrandSetup } from "@/lib/brand-completion";
 import { BrandCampaignCard } from "@/components/features/dashboard/brand-campaign-card";
 import {
   DropdownMenu,
@@ -34,6 +37,8 @@ export default function BrandCampaignsPage() {
   const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
+  
+  const { isModalOpen, missingFields, handleNewCampaignClick, handleRedirect, closeModal } = useBrandProfileModal();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -60,6 +65,13 @@ export default function BrandCampaignsPage() {
       });
 
       if (!res.ok) {
+        if (res.status === 404) {
+          // No brand found - this is expected, not an error
+          setCampaigns([]);
+          setFilteredCampaigns([]);
+          setLoading(false);
+          return;
+        }
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to fetch campaigns');
       }
@@ -67,9 +79,11 @@ export default function BrandCampaignsPage() {
       const data = await res.json();
       console.log("Campaigns data received:", data);
       const campaignsData = data.items || [];
+      console.log("All campaigns:", campaignsData);
+      console.log("Archived campaigns:", campaignsData.filter((campaign: any) => campaign.status === 'deleted'));
       setCampaigns(campaignsData);
-      // Filter out deleted campaigns from initial load
-      setFilteredCampaigns(campaignsData.filter((campaign: any) => campaign.status !== 'deleted'));
+      // Show all campaigns by default (including archived)
+      setFilteredCampaigns(campaignsData);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
       setError(error instanceof Error ? error.message : 'Failed to fetch campaigns');
@@ -79,12 +93,21 @@ export default function BrandCampaignsPage() {
   };
 
   const handleFilterChange = (filter: string) => {
+    console.log("Filter changed to:", filter);
+    console.log("Current campaigns:", campaigns);
     setActiveFilter(filter);
     if (filter === "all") {
-      // Filter out deleted campaigns from "all" view
-      setFilteredCampaigns(campaigns.filter(campaign => campaign.status !== 'deleted'));
+      // Show ALL campaigns including archived ones
+      console.log("All campaigns (including archived):", campaigns);
+      setFilteredCampaigns(campaigns);
+    } else if (filter === "archived") {
+      // Show only archived (deleted) campaigns
+      const archived = campaigns.filter(campaign => campaign.status === 'deleted');
+      console.log("Archived campaigns:", archived);
+      setFilteredCampaigns(archived);
     } else {
       const filtered = campaigns.filter(campaign => campaign.status === filter);
+      console.log(`${filter} campaigns:`, filtered);
       setFilteredCampaigns(filtered);
     }
   };
@@ -182,6 +205,48 @@ export default function BrandCampaignsPage() {
     setDeleteDialogOpen(true);
   };
 
+  const handleRestoreCampaign = async (campaignId: string) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('No authentication token found');
+        return;
+      }
+
+      const res = await fetch(`/api/campaigns/${campaignId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'paused' }) // Restore as paused by default
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to restore campaign');
+      }
+
+      // Update campaign status in local state
+      setCampaigns(prev => prev.map(c => 
+        c._id === campaignId ? { ...c, status: 'paused' } : c
+      ));
+      setFilteredCampaigns(prev => prev.map(c => 
+        c._id === campaignId ? { ...c, status: 'paused' } : c
+      ));
+      
+      // Dispatch custom event to notify sidebar to refresh
+      window.dispatchEvent(new CustomEvent('campaign-updated', { 
+        detail: { campaignId, status: 'paused' } 
+      }));
+      
+      alert('Campaign restored successfully');
+    } catch (error) {
+      console.error('Error restoring campaign:', error);
+      alert(error instanceof Error ? error.message : 'Failed to restore campaign');
+    }
+  };
+
   const getFilterSpecificTitle = () => {
     switch (activeFilter) {
       case "active":
@@ -192,6 +257,8 @@ export default function BrandCampaignsPage() {
         return "No paused campaigns";
       case "completed":
         return "No completed campaigns";
+      case "archived":
+        return "No archived campaigns";
       default:
         return "No campaigns match this filter";
     }
@@ -207,6 +274,8 @@ export default function BrandCampaignsPage() {
         return "No campaigns are currently paused. All campaigns are either active, waiting for budget, or completed.";
       case "completed":
         return "No campaigns have been completed yet. Keep working on your active campaigns to see them move to completed status.";
+      case "archived":
+        return "No campaigns have been archived yet. When you delete a campaign, it will appear here for future reference.";
       default:
         return "Try adjusting your filter or create a new campaign";
     }
@@ -228,16 +297,16 @@ export default function BrandCampaignsPage() {
     // If the error is "No brand found for this user", redirect to brand setup
     if (error.includes('No brand found for this user')) {
       return (
-        <div className="space-y-4">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Brand Setup Required</h3>
-            <p className="text-muted-foreground mb-4">
-              You need to set up your brand profile before creating campaigns.
-            </p>
-            <Link href="/brand/setup-brand">
-              <Button>Set Up Brand</Button>
-            </Link>
-          </div>
+        <div className="p-6 space-y-6">
+          <Card>
+            <div className="text-center py-12">
+              <h2 className="text-2xl font-semibold mb-4">Brand Setup Required</h2>
+              <p className="text-muted-foreground mb-6">You need to set up your brand profile before creating campaigns.</p>
+              <Link href="/brand/settings">
+                <Button>Set Up Brand</Button>
+              </Link>
+            </div>
+          </Card>
         </div>
       );
     }
@@ -251,79 +320,95 @@ export default function BrandCampaignsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Campaigns</h1>
-          <p className="text-muted-foreground">
-            Manage your influencer marketing campaigns
-          </p>
         </div>
-        <Link href="/brand/campaigns/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Campaign
-          </Button>
-        </Link>
+        <Button onClick={handleNewCampaignClick} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          New Campaign
+        </Button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex space-x-1 bg-muted p-1 rounded-lg">
-        <button
-          onClick={() => handleFilterChange("all")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeFilter === "all"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          All ({campaigns.length})
-        </button>
-        <button
-          onClick={() => handleFilterChange("active")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeFilter === "active"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Active ({campaigns.filter(c => c.status === "active").length})
-        </button>
-        <button
-          onClick={() => handleFilterChange("pending_budget")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeFilter === "pending_budget"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Pending Budget ({campaigns.filter(c => c.status === "pending_budget").length})
-        </button>
-        <button
-          onClick={() => handleFilterChange("paused")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeFilter === "pending"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Paused ({campaigns.filter(c => c.status === "paused").length})
-        </button>
-        <button
-          onClick={() => handleFilterChange("completed")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeFilter === "completed"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Completed ({campaigns.filter(c => c.status === "completed").length})
-        </button>
-      </div>
+      <div className="space-y-4">
+        {/* Filter Tabs */}
+        <div className="flex space-x-1 border-b border-border">
+          <button
+            onClick={() => handleFilterChange("all")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "all"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            All ({campaigns.length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("draft")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "draft"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Draft ({campaigns.filter(c => c.status === "draft").length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("active")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "active"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Active ({campaigns.filter(c => c.status === "active").length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("pending_budget")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "pending_budget"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Pending Budget ({campaigns.filter(c => c.status === "pending_budget").length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("paused")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "paused"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Paused ({campaigns.filter(c => c.status === "paused").length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("completed")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "completed"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Completed ({campaigns.filter(c => c.status === "completed").length})
+          </button>
+          <button
+            onClick={() => handleFilterChange("archived")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeFilter === "archived"
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Archived ({campaigns.filter(c => c.status === "deleted").length})
+          </button>
+        </div>
 
-      {/* Campaigns Grid */}
-      {filteredCampaigns.length === 0 ? (
+        {/* Campaigns Grid */}
+        {filteredCampaigns.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
@@ -337,16 +422,14 @@ export default function BrandCampaignsPage() {
                   : getFilterSpecificMessage()
                 }
               </p>
-              <Link href="/brand/campaigns/new">
-                <Button>Create Campaign</Button>
-              </Link>
+              <Button onClick={handleNewCampaignClick}>Create Campaign</Button>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {filteredCampaigns.map((campaign) => (
-            <div key={campaign._id} className="flex flex-col lg:flex-row gap-4 items-start">
+            <div key={campaign._id} className="flex gap-4 items-stretch">
               {/* Campaign Card */}
               <div className="flex-1">
                 <BrandCampaignCard
@@ -369,77 +452,117 @@ export default function BrandCampaignsPage() {
                 />
               </div>
               
-              {/* Action Buttons - Right side, responsive */}
-              <div className="flex flex-row lg:flex-col gap-1 lg:gap-1 w-full lg:w-auto">
-                <Link href={`/brand/campaigns/${campaign._id}`} className="flex-1 lg:flex-none">
-                  <Button variant="outline" size="sm" className="w-full lg:w-32 py-1.5">
-                    <Eye className="mr-2 h-4 w-4" />
+              {/* Action Buttons - Right side, aligned with card height */}
+              <div className="flex flex-col gap-2 w-32 justify-center">
+                <Link href={`/brand/campaigns/${campaign._id}`}>
+                  <Button variant="outline" size="sm" className="w-full h-8 text-xs">
+                    <Eye className="mr-1 h-3 w-3" />
                     View
                   </Button>
                 </Link>
-                <Link href={`/brand/campaigns/${campaign._id}/edit`} className="flex-1 lg:flex-none">
-                  <Button variant="outline" size="sm" className="w-full lg:w-32 py-1.5">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                </Link>
                 
-                {/* Status Change Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                {campaign.status === 'deleted' ? (
+                  /* Archived Campaign Actions */
+                  <>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full lg:w-32 py-1.5"
-                      disabled={updatingStatus === campaign._id}
+                      className="w-full h-8 text-xs"
+                      onClick={() => handleRestoreCampaign(campaign._id)}
                     >
-                      <MoreHorizontal className="mr-2 h-4 w-4" />
-                      Status
+                      <RotateCcw className="mr-1 h-3 w-3" />
+                      Restore
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(campaign._id, 'active')}
-                      disabled={campaign.status === 'active' || updatingStatus === campaign._id}
+                  </>
+                ) : campaign.status === 'draft' ? (
+                  /* Draft Campaign Actions */
+                  <>
+                    <Link href={`/brand/campaigns/${campaign._id}/edit`}>
+                      <Button variant="default" size="sm" className="w-full h-8 text-xs">
+                        <Edit className="mr-1 h-3 w-3" />
+                        Continue
+                      </Button>
+                    </Link>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full h-8 text-xs"
+                      onClick={() => openDeleteDialog(campaign._id)}
                     >
-                      Set Active
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(campaign._id, 'pending_budget')}
-                      disabled={campaign.status === 'pending_budget' || updatingStatus === campaign._id}
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  /* Active Campaign Actions */
+                  <>
+                    <Link href={`/brand/campaigns/${campaign._id}/edit`}>
+                      <Button variant="outline" size="sm" className="w-full h-8 text-xs">
+                        <Edit className="mr-1 h-3 w-3" />
+                        Edit
+                      </Button>
+                    </Link>
+                    
+                    {/* Status Change Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full h-8 text-xs"
+                          disabled={updatingStatus === campaign._id}
+                        >
+                          <MoreHorizontal className="mr-1 h-3 w-3" />
+                          Status
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(campaign._id, 'active')}
+                          disabled={campaign.status === 'active' || updatingStatus === campaign._id}
+                        >
+                          Set Active
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(campaign._id, 'pending_budget')}
+                          disabled={campaign.status === 'pending_budget' || updatingStatus === campaign._id}
+                        >
+                          Set Pending Budget
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(campaign._id, 'paused')}
+                          disabled={campaign.status === 'paused' || updatingStatus === campaign._id}
+                        >
+                          Set Paused
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleStatusChange(campaign._id, 'completed')}
+                          disabled={campaign.status === 'completed' || updatingStatus === campaign._id}
+                        >
+                          Set Completed
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    {/* Delete Button */}
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      className="w-full h-8 text-xs"
+                      onClick={() => openDeleteDialog(campaign._id)}
                     >
-                      Set Pending Budget
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(campaign._id, 'paused')}
-                      disabled={campaign.status === 'paused' || updatingStatus === campaign._id}
-                    >
-                      Set Paused
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleStatusChange(campaign._id, 'completed')}
-                      disabled={campaign.status === 'completed' || updatingStatus === campaign._id}
-                    >
-                      Set Completed
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
-                {/* Delete Button */}
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  className="w-full lg:w-32 py-1.5"
-                  onClick={() => openDeleteDialog(campaign._id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      Archive
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
-      )}
+        )}
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -463,6 +586,13 @@ export default function BrandCampaignsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <BrandProfileModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onRedirect={handleRedirect}
+        missingFields={missingFields}
+      />
     </div>
   );
 }

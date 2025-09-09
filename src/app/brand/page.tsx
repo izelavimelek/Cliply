@@ -7,7 +7,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Target, TrendingUp, DollarSign, Users } from "lucide-react";
 import Link from "next/link";
+import { useBrandProfileModal } from "@/hooks/useBrandProfileModal";
+import { BrandProfileModal } from "@/components/ui/brand-profile-modal";
 import { Badge } from "@/components/ui/badge";
+import { needsBrandSetup, isBrandComplete } from "@/lib/brand-completion";
 
 export default function BrandDashboard() {
   const [brand, setBrand] = useState<any>(null);
@@ -16,6 +19,8 @@ export default function BrandDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  
+  const { isModalOpen, missingFields, handleNewCampaignClick, handleRedirect, closeModal } = useBrandProfileModal();
 
   useEffect(() => {
     if (!authLoading) {
@@ -60,13 +65,21 @@ export default function BrandDashboard() {
 
           // Check if brand exists
           if (brandResponse.status === 404) {
-            // No brand found, redirect to setup
-            router.push('/brand/setup-brand');
+            // No brand found, but don't redirect - show dashboard with setup prompt
+            setBrand(null);
+            setCampaigns([]);
+            setSubmissions([]);
+            setLoading(false);
             return;
           }
 
           if (!brandResponse.ok) {
-            throw new Error('Failed to load brand data');
+            // If brand fetch fails, still show dashboard but with setup prompt
+            setBrand(null);
+            setCampaigns([]);
+            setSubmissions([]);
+            setLoading(false);
+            return;
           }
 
           const [brandData, campaignsData, submissionsData] = await Promise.all([
@@ -93,6 +106,30 @@ export default function BrandDashboard() {
     return <div>Loading...</div>;
   }
 
+  // Show brand setup prompt if brand is not set up or incomplete
+  if (needsBrandSetup(brand)) {
+    return (
+      <div className="p-6 space-y-6">
+        <Card>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold mb-4">Brand Setup Required</h2>
+            <p className="text-muted-foreground mb-6">
+              {brand ? 
+                "Complete your brand profile to start creating campaigns and managing your brand." :
+                "Set up your brand profile to start creating campaigns and managing your brand."
+              }
+            </p>
+            <Button 
+              onClick={() => router.push('/brand/settings')}
+            >
+              {brand ? "Complete Brand Setup" : "Set Up Brand"}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Quick Actions */}
@@ -103,12 +140,13 @@ export default function BrandDashboard() {
             <p className="text-gray-300 dark:text-gray-600">Get started with your next campaign</p>
           </div>
           <div className="flex gap-3">
-            <Link href="/brand/campaigns/new">
-              <Button className="flex items-center gap-2 bg-white hover:bg-gray-300 text-gray-900 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-white">
-                <Plus className="h-4 w-4 !text-gray-900 dark:!text-white" />
-                Add Campaign
-              </Button>
-            </Link>
+            <Button 
+              onClick={handleNewCampaignClick}
+              className="flex items-center gap-2 bg-white hover:bg-gray-300 text-gray-900 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-white"
+            >
+              <Plus className="h-4 w-4 !text-gray-900 dark:!text-white" />
+              Add Campaign
+            </Button>
             <Link href="/brand/campaigns">
               <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border border-gray-400 text-white hover:bg-white hover:text-black dark:border-gray-600 dark:text-gray-600 dark:hover:bg-gray-600 dark:hover:text-white h-9 px-4 py-2">
                 View All Campaigns
@@ -212,12 +250,10 @@ export default function BrandDashboard() {
               <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-gray-500 mb-2">No campaigns yet.</p>
               <p className="text-sm text-gray-400 mb-4">Create your first campaign to get started!</p>
-              <Link href="/brand/campaigns/new">
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Campaign
-                </Button>
-              </Link>
+              <Button size="sm" onClick={handleNewCampaignClick}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Campaign
+              </Button>
             </div>
           )}
         </Card>
@@ -268,6 +304,13 @@ export default function BrandDashboard() {
           )}
         </Card>
       </div>
+      
+      <BrandProfileModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onRedirect={handleRedirect}
+        missingFields={missingFields}
+      />
     </div>
   );
 }

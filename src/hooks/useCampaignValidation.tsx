@@ -13,6 +13,7 @@ interface SectionCompletionStatus {
   'content-requirements': boolean;
   'audience-targeting': boolean;
   'agreements-compliance': boolean;
+  'assets': boolean;
 }
 
 interface CampaignValidationResult {
@@ -33,8 +34,9 @@ export function useCampaignValidation(campaign: CampaignData | null): CampaignVa
           'content-requirements': false,
           'audience-targeting': false,
           'agreements-compliance': false,
+          'assets': false,
         },
-        completionCount: { completed: 0, total: 5 },
+        completionCount: { completed: 0, total: 6 },
         isComplete: false,
       };
     }
