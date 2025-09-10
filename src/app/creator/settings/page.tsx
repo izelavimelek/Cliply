@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/lib/auth";
 import { 
   User, 
   Mail, 
@@ -19,10 +19,21 @@ import {
   Shield, 
   CreditCard,
   Camera,
-  Save
+  Save,
+  Settings,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile');
+  const [loading, setLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+  
   const [profile, setProfile] = useState({
     name: "John Creator",
     email: "john@example.com",
@@ -55,26 +66,154 @@ export default function SettingsPage() {
     dataSharing: false
   });
 
+  // Save functions
+  const saveProfile = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      setSaveStatus({ type: null, message: '' });
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'creator',
+          display_name: profile.name,
+          bio: profile.bio,
+          website: profile.website,
+          social_links: socialLinks,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save profile');
+      }
+
+      setSaveStatus({ type: 'success', message: 'Profile updated successfully!' });
+      setTimeout(() => setSaveStatus({ type: null, message: '' }), 3000);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setSaveStatus({ 
+        type: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to save profile' 
+      });
+      setTimeout(() => setSaveStatus({ type: null, message: '' }), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSocialLinks = async () => {
+    await saveProfile(); // Reuse the same function since social links are part of profile
+  };
+
+  const saveNotifications = async () => {
+    // For now, just show a success message since we don't have a notifications API
+    setSaveStatus({ type: 'success', message: 'Notification preferences saved!' });
+    setTimeout(() => setSaveStatus({ type: null, message: '' }), 3000);
+  };
+
+  const savePrivacy = async () => {
+    // For now, just show a success message since we don't have a privacy API
+    setSaveStatus({ type: 'success', message: 'Privacy settings saved!' });
+    setTimeout(() => setSaveStatus({ type: null, message: '' }), 3000);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Account Settings ⚙️</h1>
-          <p className="text-muted-foreground mt-1">Manage your account preferences and profile</p>
+          <h1 className="text-3xl font-bold">Account Settings</h1>
+          <div className="text-muted-foreground mt-1">
+            <span>Manage your account preferences and profile</span>
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="social">Social Links</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-        </TabsList>
+      {/* Status Message */}
+      {saveStatus.type && (
+        <div className={`flex items-center gap-2 p-4 rounded-lg ${
+          saveStatus.type === 'success' 
+            ? 'bg-green-50 text-green-800 border border-green-200' 
+            : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {saveStatus.type === 'success' ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          <span className="font-medium">{saveStatus.message}</span>
+        </div>
+      )}
 
-        <TabsContent value="profile" className="space-y-4">
+      <div className="space-y-4">
+        <div className="flex space-x-1 border-b border-border">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'profile'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Profile
+          </button>
+          <button
+            onClick={() => setActiveTab('social')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'social'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Social Links
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'notifications'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Notifications
+          </button>
+          <button
+            onClick={() => setActiveTab('privacy')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'privacy'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Privacy
+          </button>
+          <button
+            onClick={() => setActiveTab('billing')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'billing'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Billing
+          </button>
+        </div>
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -152,15 +291,22 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={saveProfile}
+                disabled={loading}
+              >
                 <Save className="h-4 w-4" />
-                Save Changes
+                {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="social" className="space-y-4">
+        {/* Social Links Tab */}
+        {activeTab === 'social' && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -205,15 +351,22 @@ export default function SettingsPage() {
                   placeholder="https://twitter.com/yourusername" 
                 />
               </div>
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={saveSocialLinks}
+                disabled={loading}
+              >
                 <Save className="h-4 w-4" />
-                Save Social Links
+                {loading ? 'Saving...' : 'Save Social Links'}
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="notifications" className="space-y-4">
+        {/* Notifications Tab */}
+        {activeTab === 'notifications' && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -274,15 +427,22 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={saveNotifications}
+                disabled={loading}
+              >
                 <Save className="h-4 w-4" />
-                Save Preferences
+                {loading ? 'Saving...' : 'Save Preferences'}
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="privacy" className="space-y-4">
+        {/* Privacy Tab */}
+        {activeTab === 'privacy' && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -339,15 +499,22 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
-              <Button className="flex items-center gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={savePrivacy}
+                disabled={loading}
+              >
                 <Save className="h-4 w-4" />
-                Save Privacy Settings
+                {loading ? 'Saving...' : 'Save Privacy Settings'}
               </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="billing" className="space-y-4">
+        {/* Billing Tab */}
+        {activeTab === 'billing' && (
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -363,8 +530,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -36,7 +36,7 @@ export async function GET(
       );
     }
 
-    const brandId = params.id;
+    const { id: brandId } = await params;
 
     // Validate ObjectId format
     if (!ObjectId.isValid(brandId)) {

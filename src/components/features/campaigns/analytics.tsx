@@ -21,13 +21,11 @@ export function Analytics({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
+          <h2 className="text-2xl font-bold">
             Campaign Analytics
           </h2>
-          <p className="text-muted-foreground mt-1">Track performance metrics and insights</p>
         </div>
       </div>
       

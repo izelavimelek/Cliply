@@ -134,13 +134,11 @@ export function Submissions({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" />
+          <h2 className="text-2xl font-bold">
             Creator Submissions
           </h2>
-          <p className="text-muted-foreground mt-1">Review and manage submissions from creators</p>
         </div>
         <div className="text-sm text-muted-foreground">
           {submissions.length} total submissions

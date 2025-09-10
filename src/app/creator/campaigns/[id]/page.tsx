@@ -41,6 +41,7 @@ import {
   X
 } from "lucide-react";
 import { FaYoutube, FaTiktok, FaInstagram, FaTwitter } from "react-icons/fa";
+import { AnnouncementView } from "@/components/features/campaigns/announcement-view";
 
 // Type definitions
 interface Campaign {
@@ -401,7 +402,7 @@ export default function CampaignDetailPage() {
   const platforms = campaign.platforms || [campaign.platform].filter(Boolean) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-white dark:from-slate-900 dark:to-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -758,6 +759,18 @@ export default function CampaignDetailPage() {
                 </CardContent>
               </Card>
 
+              {/* Campaign Announcements Section - Only show if creator has joined */}
+              {applicationStatus?.has_applied && applicationStatus.status === 'approved' && (
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-6">
+                    <AnnouncementView 
+                      campaignId={campaignId} 
+                      creatorId={user?.id || ''} 
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
               {/* My Submissions Section */}
               <Card className="border-0 shadow-lg">
                 <CardHeader>
@@ -918,7 +931,7 @@ export default function CampaignDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {platforms.map((platform: string | undefined) => {
+                  {platforms.map((platform: string | undefined, index: number) => {
                     if (!platform) return null;
                     const platformIcons: Record<PlatformType, React.ReactElement> = {
                       'instagram': <FaInstagram className="w-6 h-6 text-pink-600" />,
@@ -928,7 +941,7 @@ export default function CampaignDetailPage() {
                     };
                     const platformKey = platform.toLowerCase() as PlatformType;
                     return (
-                      <div key={platform} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                      <div key={platform || `platform-${index}`} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                         {platformIcons[platformKey] || <span className="w-6 h-6 bg-slate-400 rounded"></span>}
                         <span className="text-sm font-medium capitalize">{platform}</span>
                       </div>

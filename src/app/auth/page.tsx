@@ -14,11 +14,13 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [brandName, setBrandName] = useState("");
   const [role, setRole] = useState<"creator" | "brand">("creator");
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const router = useRouter();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +29,7 @@ export default function AuthPage() {
     try {
       let user;
       if (isSignUp) {
-        user = await signUp(email, password, name, role);
+        user = await signUp(email, password, name, role, brandName);
       } else {
         user = await signIn(email, password);
       }
@@ -50,19 +52,20 @@ export default function AuthPage() {
     }
   };
 
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to Cliply</CardTitle>
           <CardDescription>
-            {isSignUp ? "Create your account" : "Sign in to your account"}
+            {isSignUp ? "Create your account" : "Log in to your account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={isSignUp ? "signup" : "signin"} onValueChange={(value) => setIsSignUp(value === "signup")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signin">Log In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
             
@@ -91,46 +94,13 @@ export default function AuthPage() {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? "Logging in..." : "Log In"}
                 </Button>
               </form>
             </TabsContent>
             
             <TabsContent value="signup">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">I am a...</Label>
                   <select
@@ -143,6 +113,57 @@ export default function AuthPage() {
                     <option value="brand">Brand/Marketing Agency</option>
                   </select>
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                {role === "brand" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="brand-name">Brand Name</Label>
+                    <Input
+                      id="brand-name"
+                      type="text"
+                      placeholder="Enter your brand name"
+                      value={brandName}
+                      onChange={(e) => setBrandName(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+                
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>

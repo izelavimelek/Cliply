@@ -286,7 +286,7 @@ export default function BrandCampaignsPage() {
   }
 
   if (!user) {
-    return <div>Please sign in to view campaigns.</div>;
+    return <div>Please log in to view campaigns.</div>;
   }
 
   if (loading) {

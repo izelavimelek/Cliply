@@ -5,6 +5,7 @@ export interface Campaign {
   title: string;
   description: string;
   status: string;
+  brand_id?: string;
   platform?: string;
   platforms?: string[];
   objective?: string;
@@ -92,6 +93,21 @@ export interface Submission {
   status: string;
   views: number;
   created_at: string;
+}
+
+export interface Announcement {
+  id: string;
+  campaign_id: string;
+  brand_id: string;
+  content: string;
+  title?: string;
+  is_pinned: boolean;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  created_by: string;
+  updated_by?: string;
+  created_at: string;
+  updated_at: string;
+  brand_name?: string;
 }
 
 export interface CampaignSectionProps {

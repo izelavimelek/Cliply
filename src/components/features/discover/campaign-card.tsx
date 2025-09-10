@@ -60,7 +60,7 @@ export function CampaignCard({
       </div>
       
       {/* Main Content - Horizontal Layout */}
-      <div className="p-4">
+      <div className="px-4 py-2">
         <div className="flex gap-4">
           {/* Thumbnail Image */}
           <div className="flex-shrink-0">

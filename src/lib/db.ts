@@ -1,5 +1,5 @@
 import { getDatabase, Collections } from './mongodb';
-import { Campaign, Submission, Profile, Brand, Snapshot, Payout, AuditLog, CampaignApplication } from './mongodb/schemas';
+import { Campaign, Submission, Profile, Brand, Snapshot, Payout, AuditLog, CampaignApplication, Announcement } from './mongodb/schemas';
 import { ObjectId } from 'mongodb';
 
 export async function createCampaign(campaignData: any): Promise<string> {
@@ -452,5 +452,146 @@ export async function updateCampaignApplication(id: string, updateData: Partial<
   } catch (error) {
     console.error('Error updating campaign application:', error);
     return null;
+  }
+}
+
+// Announcement functions
+export async function createAnnouncement(announcementData: Omit<Announcement, '_id' | 'created_at' | 'updated_at'>): Promise<string> {
+  try {
+    const db = await getDatabase();
+    const announcementsCollection = db.collection('announcements');
+    
+    const now = new Date();
+    const announcement: Omit<Announcement, '_id'> = {
+      ...announcementData,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const result = await announcementsCollection.insertOne(announcement);
+    return result.insertedId.toString();
+  } catch (error) {
+    console.error('Error creating announcement:', error);
+    throw new Error('Failed to create announcement');
+  }
+}
+
+export async function getAnnouncements(filters?: { campaign_id?: string; brand_id?: string; creator_id?: string }): Promise<Announcement[]> {
+  try {
+    const db = await getDatabase();
+    const announcementsCollection = db.collection('announcements');
+
+    let query = {};
+    if (filters?.campaign_id) query = { ...query, campaign_id: new ObjectId(filters.campaign_id) };
+    if (filters?.brand_id) query = { ...query, brand_id: new ObjectId(filters.brand_id) };
+
+    // If creator_id is provided, we need to check if they're part of the campaign
+    if (filters?.creator_id) {
+      const applications = await getCampaignApplications({ creator_id: filters.creator_id, status: 'approved' });
+      const campaignIds = applications.map(app => app.campaign_id);
+      query = { ...query, campaign_id: { $in: campaignIds } };
+    }
+
+    const announcements = await announcementsCollection
+      .find(query)
+      .sort({ is_pinned: -1, created_at: -1 }) // Pinned first, then by date
+      .toArray();
+
+    // Get brand names for announcements
+    const brandsCollection = db.collection(Collections.BRANDS);
+    const brandIds = [...new Set(announcements.map(a => a.brand_id))];
+    const brands = await brandsCollection.find({ _id: { $in: brandIds } }).toArray();
+    const brandMap = new Map(brands.map(b => [b._id.toString(), b.name]));
+
+    return announcements.map(announcement => ({
+      ...announcement,
+      id: announcement._id?.toString() || '',
+      campaign_id: announcement.campaign_id.toString(),
+      brand_id: announcement.brand_id.toString(),
+      brand_name: brandMap.get(announcement.brand_id.toString()),
+      created_at: announcement.created_at.toISOString(),
+      updated_at: announcement.updated_at.toISOString(),
+    })) as Announcement[];
+  } catch (error) {
+    console.error('Error getting announcements:', error);
+    return [];
+  }
+}
+
+export async function getAnnouncement(id: string): Promise<Announcement | null> {
+  try {
+    const db = await getDatabase();
+    const announcementsCollection = db.collection('announcements');
+
+    const announcement = await announcementsCollection.findOne({ _id: new ObjectId(id) });
+    if (!announcement) return null;
+
+    // Get brand name
+    const brandsCollection = db.collection(Collections.BRANDS);
+    const brand = await brandsCollection.findOne({ _id: announcement.brand_id });
+    
+    return {
+      ...announcement,
+      id: announcement._id?.toString() || '',
+      campaign_id: announcement.campaign_id.toString(),
+      brand_id: announcement.brand_id.toString(),
+      brand_name: brand?.name,
+      created_at: announcement.created_at.toISOString(),
+      updated_at: announcement.updated_at.toISOString(),
+    } as Announcement;
+  } catch (error) {
+    console.error('Error getting announcement:', error);
+    return null;
+  }
+}
+
+export async function updateAnnouncement(id: string, updateData: Partial<Announcement>): Promise<Announcement | null> {
+  try {
+    const db = await getDatabase();
+    const announcementsCollection = db.collection('announcements');
+
+    const now = new Date();
+    const updatePayload = {
+      ...updateData,
+      updated_at: now,
+    };
+
+    const result = await announcementsCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updatePayload },
+      { returnDocument: 'after' }
+    );
+
+    if (!result) return null;
+
+    // Get brand name
+    const brandsCollection = db.collection(Collections.BRANDS);
+    const brand = await brandsCollection.findOne({ _id: result.brand_id });
+
+    return {
+      ...result,
+      id: result._id?.toString() || '',
+      campaign_id: result.campaign_id.toString(),
+      brand_id: result.brand_id.toString(),
+      brand_name: brand?.name,
+      created_at: result.created_at.toISOString(),
+      updated_at: result.updated_at.toISOString(),
+    } as Announcement;
+  } catch (error) {
+    console.error('Error updating announcement:', error);
+    return null;
+  }
+}
+
+export async function deleteAnnouncement(id: string): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    const announcementsCollection = db.collection('announcements');
+
+    const result = await announcementsCollection.deleteOne({ _id: new ObjectId(id) });
+    return result.deletedCount > 0;
+  } catch (error) {
+    console.error('Error deleting announcement:', error);
+    return false;
   }
 }

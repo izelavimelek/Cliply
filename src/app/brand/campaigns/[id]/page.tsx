@@ -423,7 +423,7 @@ export default function CampaignDetailPage() {
                 <div className="flex justify-center">
                   <div className="w-24 h-24 rounded-xl overflow-hidden border border-border">
                     <img
-                      src={logoPreview || ''}
+                      src={logoPreview || undefined}
                       alt="New Logo Preview"
                       className="w-full h-full object-cover"
                     />
@@ -486,7 +486,7 @@ export default function CampaignDetailPage() {
                 <div className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden group cursor-pointer border-2 border-border/50 hover:border-border transition-colors" onClick={() => setLogoModalOpen(true)}>
                   {logoPreview || (campaign as any).thumbnail ? (
                     <img 
-                      src={logoPreview || (campaign as any).thumbnail} 
+                      src={logoPreview || (campaign as any).thumbnail || undefined} 
                       alt="Campaign Logo" 
                       className="w-full h-full object-cover"
                     />
@@ -713,12 +713,6 @@ export default function CampaignDetailPage() {
             <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Management
             </div>
-            <Link href={`/brand/campaigns/${campaignId}/edit`} className="block">
-              <button className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2">
-                <Edit className="h-4 w-4" />
-                Edit Campaign
-              </button>
-            </Link>
             
             {isDraft && (
               <button 

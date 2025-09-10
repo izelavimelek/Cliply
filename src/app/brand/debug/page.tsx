@@ -47,7 +47,7 @@ export default function DebugPage() {
   }, [user]);
 
   if (!user) {
-    return <div>Please sign in to view debug information.</div>;
+    return <div>Please log in to view debug information.</div>;
   }
 
   return (

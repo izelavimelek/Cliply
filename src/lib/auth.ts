@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 // User interface for client-side
 export interface User {
@@ -8,12 +9,15 @@ export interface User {
   email: string;
   role?: 'creator' | 'brand' | 'admin';
   is_admin?: boolean;
+  theme_preference?: 'light' | 'dark' | 'system';
+  display_name?: string | null;
 }
 
 // Client-side auth hook
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -28,6 +32,10 @@ export function useAuth() {
       .then(data => {
         if (data.user) {
           setUser(data.user);
+          // Restore user's theme preference
+          if (data.user.theme_preference) {
+            setTheme(data.user.theme_preference);
+          }
         } else {
           localStorage.removeItem('auth_token');
         }
@@ -67,22 +75,26 @@ export function useAuth() {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Sign in failed');
+      throw new Error(error.message || 'Log in failed');
     }
 
     const { user, token } = await response.json();
     localStorage.setItem('auth_token', token);
     setUser(user);
+    // Restore user's theme preference on login
+    if (user.theme_preference) {
+      setTheme(user.theme_preference);
+    }
     return user;
   };
 
-  const signUp = async (email: string, password: string, name?: string, role?: 'creator' | 'brand') => {
+  const signUp = async (email: string, password: string, name?: string, role?: 'creator' | 'brand', brandName?: string) => {
     const response = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password, name, role }),
+      body: JSON.stringify({ email, password, name, role, brandName }),
     });
 
     if (!response.ok) {
@@ -93,6 +105,10 @@ export function useAuth() {
     const { user, token } = await response.json();
     localStorage.setItem('auth_token', token);
     setUser(user);
+    // Restore user's theme preference on signup (defaults to light)
+    if (user.theme_preference) {
+      setTheme(user.theme_preference);
+    }
     return user;
   };
 

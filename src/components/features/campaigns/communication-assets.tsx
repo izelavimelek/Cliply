@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Edit } from "lucide-react";
 import { CampaignSectionProps } from "./types";
+import { AnnouncementFeed } from "./announcement-feed";
+import { useState, useEffect } from "react";
 
 interface CommunicationAssetsProps extends Omit<CampaignSectionProps, 'activeSection'> {}
 
@@ -19,16 +21,25 @@ export function CommunicationAssets({
   cancelEditing,
   setActiveSection
 }: CommunicationAssetsProps) {
+  const [brandId, setBrandId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get brand ID from campaign data
+    if (campaign.brand_id) {
+      setBrandId(campaign.brand_id);
+    }
+  }, [campaign]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <MessageSquare className="h-6 w-6" />
+          <h2 className="text-2xl font-bold">
             Communication
           </h2>
-          <p className="text-muted-foreground mt-1">Manage communication with creators</p>
+          <p className="text-muted-foreground mt-1">
+            Manage announcements and communicate with creators
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => startEditing('communication-assets')}>
@@ -37,10 +48,14 @@ export function CommunicationAssets({
         </div>
       </div>
       
-      <div className="text-center py-8">
-        <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-        <p className="text-muted-foreground">Communication features will be implemented here</p>
-      </div>
+      {brandId ? (
+        <AnnouncementFeed campaignId={campaignId} brandId={brandId} />
+      ) : (
+        <div className="text-center py-8">
+          <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground">Loading brand information...</p>
+        </div>
+      )}
     </div>
   );
 }

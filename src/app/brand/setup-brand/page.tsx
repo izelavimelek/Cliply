@@ -55,7 +55,7 @@ export default function SetupBrandPage() {
   };
 
   if (!user) {
-    return <div>Please sign in to set up your brand.</div>;
+    return <div>Please log in to set up your brand.</div>;
   }
 
   return (

@@ -348,7 +348,7 @@ export default function BrandSubmissionsPage() {
   }
 
   if (!user) {
-    return <div>Please sign in to view submissions.</div>;
+    return <div>Please log in to view submissions.</div>;
   }
 
   if (loading) {

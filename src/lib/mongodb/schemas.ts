@@ -15,8 +15,10 @@ export interface Profile extends BaseDocument {
   display_name?: string;
   role?: 'creator' | 'brand' | 'admin';
   is_admin?: boolean;
+  brand_name?: string; // Brand name for brand accounts
   bio?: string;
   website?: string;
+  theme_preference?: 'light' | 'dark' | 'system';
   social_links?: {
     instagram?: string;
     youtube?: string;
@@ -201,6 +203,18 @@ export interface Webhook extends BaseDocument {
   error_message?: string;
 }
 
+// Announcement schema
+export interface Announcement extends BaseDocument {
+  campaign_id: ObjectId;
+  brand_id: ObjectId;
+  content: string;
+  title?: string;
+  is_pinned: boolean;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  created_by: string; // brand user_id
+  updated_by?: string;
+}
+
 // Audit log schema
 export interface AuditLog extends BaseDocument {
   user_id: string;
@@ -231,4 +245,5 @@ export const Collections = {
   PAYOUTS: 'payouts',
   WEBHOOKS: 'webhooks',
   AUDIT_LOGS: 'audit_logs',
+  ANNOUNCEMENTS: 'announcements',
 } as const;

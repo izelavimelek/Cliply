@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LogoutButton } from "@/components/ui/logout-button";
 import { 
   LayoutDashboard, 
   Megaphone, 
@@ -466,16 +467,20 @@ export default function BrandSidebar({ userRole }: BrandSidebarProps) {
         </div>
       )}
 
-      {/* Theme Toggle at Bottom */}
+      {/* Theme Toggle and Logout at Bottom */}
       <div className={cn(
         "mt-auto border-t border-border p-3",
         isCollapsed ? "px-2" : "px-4"
       )}>
         <div className={cn(
           "flex items-center",
-          isCollapsed ? "justify-center" : "justify-start"
+          isCollapsed ? "gap-1 justify-center" : "gap-2 justify-between"
         )}>
-          <ThemeToggle />
+          <ThemeToggle isCollapsed={isCollapsed} />
+          <LogoutButton 
+            isCollapsed={isCollapsed}
+            showText={!isCollapsed}
+          />
         </div>
       </div>
     </div>

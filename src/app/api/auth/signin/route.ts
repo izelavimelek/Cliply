@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
         email: profile.email,
         role: profile.role,
         is_admin: profile.is_admin,
+        theme_preference: profile.theme_preference || 'light',
       },
       token 
     });

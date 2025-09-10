@@ -348,7 +348,7 @@ export default function BrandAnalyticsPage() {
   }
 
   if (!user) {
-    return <div>Please sign in to view analytics.</div>;
+    return <div>Please log in to view analytics.</div>;
   }
 
   // Show brand setup prompt if brand is not set up or incomplete

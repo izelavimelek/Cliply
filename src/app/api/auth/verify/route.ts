@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDatabase, Collections } from '@/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,11 +19,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ user: null });
       }
 
+      // Fetch user profile to get theme preference
+      const db = await getDatabase();
+      const profilesCollection = db.collection(Collections.PROFILES);
+      const profile = await profilesCollection.findOne({ user_id: decoded.userId });
+
       const user = {
         id: decoded.userId,
         email: decoded.email,
         role: decoded.role,
         is_admin: decoded.isAdmin,
+        theme_preference: profile?.theme_preference || 'light',
+        display_name: profile?.display_name || null,
       };
 
       return NextResponse.json({ user });

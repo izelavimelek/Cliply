@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LogoutButton } from "@/components/ui/logout-button";
+import { useAuth } from "@/lib/auth";
 import { 
   LayoutDashboard, 
   Search, 
@@ -38,6 +40,7 @@ interface CreatorSidebarProps {
 
 export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
   console.log('CreatorSidebar component rendered with userRole:', userRole);
+  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Dispatch sidebar state changes to parent layout
@@ -210,7 +213,9 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         {!isCollapsed && (
-          <h2 className="text-lg font-semibold">Creator Dashboard</h2>
+          <h2 className="text-lg font-semibold">
+            {user?.display_name ? `Hello, ${user.display_name}` : 'Creator Dashboard'}
+          </h2>
         )}
         <Button
           variant="ghost"
@@ -442,16 +447,20 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
         </div>
       )}
 
-      {/* Theme Toggle at Bottom */}
+      {/* Theme Toggle and Logout at Bottom */}
       <div className={cn(
         "mt-auto border-t border-border p-3",
         isCollapsed ? "px-2" : "px-4"
       )}>
         <div className={cn(
           "flex items-center",
-          isCollapsed ? "justify-center" : "justify-start"
+          isCollapsed ? "gap-1 justify-center" : "gap-2 justify-between"
         )}>
-          <ThemeToggle />
+          <ThemeToggle isCollapsed={isCollapsed} />
+          <LogoutButton 
+            isCollapsed={isCollapsed}
+            showText={!isCollapsed}
+          />
         </div>
       </div>
     </div>

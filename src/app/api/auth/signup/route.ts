@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Signup request body:', body);
     
-    const { email, password, name, role } = body;
+    const { email, password, name, role, brandName } = body;
 
     if (!email || !password) {
       console.log('Missing email or password:', { email: !!email, password: !!password });
@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
       console.log('Invalid role:', role);
       return NextResponse.json(
         { message: 'Valid role (creator or brand) is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate brand name if role is brand
+    if (role === 'brand' && (!brandName || brandName.trim().length === 0)) {
+      console.log('Brand name required for brand role');
+      return NextResponse.json(
+        { message: 'Brand name is required for brand accounts' },
         { status: 400 }
       );
     }
@@ -65,6 +74,7 @@ export async function POST(request: NextRequest) {
       display_name: name,
       role: role as 'creator' | 'brand',
       is_admin: false,
+      brand_name: role === 'brand' ? brandName : undefined,
       created_at: now,
       updated_at: now,
     };
