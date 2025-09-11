@@ -209,7 +209,7 @@ export default function CampaignDetailPage() {
       try {
         const [campaignRes, submissionsRes] = await Promise.all([
           fetch(`/api/campaigns/${campaignId}`),
-          fetch(`/api/submissions?campaign_id=${campaignId}`)
+          fetch(`/api/submissions?campaign_id=${campaignId}&role=brand`)
         ]);
 
         if (campaignRes.ok) {
@@ -222,6 +222,8 @@ export default function CampaignDetailPage() {
         if (submissionsRes.ok) {
           const submissionsData = await submissionsRes.json();
           setSubmissions(submissionsData.items || []);
+        } else {
+          console.error('Submissions fetch failed:', submissionsRes.status, submissionsRes.statusText);
         }
       } catch (error) {
         console.error('Error fetching campaign data:', error);
@@ -474,7 +476,7 @@ export default function CampaignDetailPage() {
       </button>
 
       {/* Campaign Sidebar - Simple column layout */}
-      <div className={`w-80 bg-muted/80 border-r border-border flex-shrink-0 h-screen flex flex-col shadow-lg transform transition-all duration-300 ease-in-out ${
+      <div className={`w-72 bg-muted/80 border-r border-border flex-shrink-0 h-screen flex flex-col shadow-lg transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         {/* Campaign Header */}
@@ -753,7 +755,7 @@ export default function CampaignDetailPage() {
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-20 transition-all duration-300 left-80"
+          className="lg:hidden fixed inset-0 bg-black/50 z-20 transition-all duration-300 left-72"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -869,6 +871,7 @@ export default function CampaignDetailPage() {
             cancelEditing={cancelEditing}
             setActiveSection={setActiveSection}
             submissions={submissions}
+            onSubmissionsUpdate={setSubmissions}
           />
         )}
 

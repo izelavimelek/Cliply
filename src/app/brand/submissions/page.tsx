@@ -168,8 +168,6 @@ export default function BrandSubmissionsPage() {
       const submissionsData = await submissionsResponse.json();
       const allSubmissions = submissionsData.items || [];
 
-      console.log('Debug - Submissions API response:', submissionsData);
-      console.log('Debug - All submissions for brand:', allSubmissions.length);
 
       // Enrich submissions with campaign and creator data
       const enrichedSubmissions = allSubmissions.map((submission: any) => {
@@ -408,22 +406,6 @@ export default function BrandSubmissionsPage() {
           <h1 className="text-3xl font-bold">Submissions</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/debug/submissions');
-                const data = await response.json();
-                console.log('Debug data:', data);
-                alert(`Submissions: ${data.submissionCount}, Campaigns: ${data.campaignCount}`);
-              } catch (error) {
-                console.error('Debug error:', error);
-              }
-            }}
-          >
-            Debug
-          </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -490,13 +472,13 @@ export default function BrandSubmissionsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Submissions</p>
-                  <p className="text-2xl font-bold">{submissions.length}</p>
+                  <p className="text-2xl font-bold">{filteredSubmissions.length}</p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -508,7 +490,7 @@ export default function BrandSubmissionsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Review</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {submissions.filter(s => s.status === 'pending').length}
+                    {filteredSubmissions.filter(s => s.status === 'pending').length}
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
@@ -521,7 +503,7 @@ export default function BrandSubmissionsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Approved</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {submissions.filter(s => s.status === 'approved').length}
+                    {filteredSubmissions.filter(s => s.status === 'approved').length}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -532,9 +514,22 @@ export default function BrandSubmissionsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {filteredSubmissions.filter(s => s.status === 'rejected').length}
+                  </p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
                   <p className="text-sm text-muted-foreground">Total Views</p>
                   <p className="text-2xl font-bold">
-                    {submissions.reduce((sum, s) => sum + (s.views || 0), 0).toLocaleString()}
+                    {filteredSubmissions.reduce((sum, s) => sum + (s.views || 0), 0).toLocaleString()}
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-muted-foreground" />
@@ -563,191 +558,182 @@ export default function BrandSubmissionsPage() {
       ) : (
         <Card>
           <CardContent className="p-0">
+            {/* Table Header */}
+            <div className="px-6 py-3 border-b bg-muted/30">
+              <div className="flex items-center gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Creator</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Campaign</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Content</div>
+                </div>
+                <div className="w-24">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Status</div>
+                </div>
+                <div className="w-20">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Views</div>
+                </div>
+                <div className="w-24">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Date</div>
+                </div>
+                <div className="w-40">
+                  <div className="text-sm font-medium text-muted-foreground text-left">Actions</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Table Body */}
             <div className="divide-y">
               {filteredSubmissions.map((submission) => (
-                <div key={submission._id} className="p-6 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start justify-between gap-6">
-                    {/* Left side - Creator info and content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-4">
-                        {/* Creator Avatar */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-                          {submission.creator?.name ? submission.creator.name.charAt(0).toUpperCase() : 'C'}
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          {/* Creator Name and Status */}
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">{submission.creator?.name || 'Unknown Creator'}</h3>
-                            <span className="text-muted-foreground text-sm">{submission.creator?.username || '@unknown'}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {submission.creator?.followers?.toLocaleString() || '0'} followers
-                            </Badge>
-                          </div>
-
-                          {/* Campaign Info */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <Link 
-                              href={`/brand/campaigns/${submission.campaign_id}`}
-                              className="text-sm font-medium text-primary hover:underline"
-                            >
-                              {submission.campaign?.title}
-                            </Link>
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${getCampaignStatusColor(submission.campaign?.status || '')}`}
-                            >
-                              {submission.campaign?.status?.replace('_', ' ')}
-                            </Badge>
-                          </div>
-
-                          {/* Submission Details */}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {new Date(submission.created_at).toLocaleDateString()}
-                            </div>
-                            {submission.views && (
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-4 w-4" />
-                                {submission.views.toLocaleString()} views
-                              </div>
-                            )}
-                            {submission.earnings && (
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4" />
-                                ${submission.earnings}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Post URL */}
-                          {submission.post_url && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                              <a 
-                                href={submission.post_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline truncate"
-                              >
-                                {submission.post_url}
-                              </a>
-                            </div>
-                          )}
-
-                          {/* Media Files - Compact Preview */}
-                          {submission.media_urls && submission.media_urls.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium text-muted-foreground">Media Files ({submission.media_urls.length}):</p>
-                              <div className="flex gap-2">
-                                {submission.media_urls.slice(0, 3).map((mediaUrl, index) => (
-                                  <div key={index} className="relative group">
-                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
-                                      {mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                        <img 
-                                          src={mediaUrl} 
-                                          alt={`Media ${index + 1}`}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : mediaUrl.match(/\.(mp4|webm|mov)$/i) ? (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                          <FileText className="w-6 h-6 text-muted-foreground" />
-                                        </div>
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                          <FileText className="w-6 h-6 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
-                                    <a 
-                                      href={mediaUrl} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100"
-                                    >
-                                      <ExternalLink className="w-3 h-3 text-white" />
-                                    </a>
-                                  </div>
-                                ))}
-                                {submission.media_urls.length > 3 && (
-                                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                                    <span className="text-xs text-muted-foreground">+{submission.media_urls.length - 3}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Feedback */}
-                          {submission.feedback && (
-                            <div className="mt-3 p-3 bg-muted rounded-lg">
-                              <p className="text-sm font-medium mb-1">Feedback:</p>
-                              <p className="text-sm text-muted-foreground line-clamp-2">{submission.feedback}</p>
-                            </div>
-                          )}
-                        </div>
+                <div key={submission._id} className="px-6 py-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-6">
+                    {/* Creator Info */}
+                    <div className="flex-1 min-w-0 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        {submission.creator?.name ? submission.creator.name.charAt(0).toUpperCase() : 'C'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm truncate">{submission.creator?.name || 'Unknown Creator'}</div>
+                        <div className="text-xs text-muted-foreground truncate">{submission.creator?.username || '@unknown'}</div>
+                        <div className="text-xs text-muted-foreground">{submission.creator?.followers?.toLocaleString() || '0'} followers</div>
                       </div>
                     </div>
 
-                    {/* Right side - Actions */}
-                    <div className="flex flex-col gap-2 w-48 flex-shrink-0">
-                      {/* Status Badge */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className={`${getStatusColor(submission.status)} border`}>
-                          <div className="flex items-center gap-1">
-                            {getStatusIcon(submission.status)}
-                            {submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : 'Unknown'}
-                          </div>
-                        </Badge>
-                      </div>
+                    {/* Campaign */}
+                    <div className="flex-1 min-w-0">
+                      <Link 
+                        href={`/brand/campaigns/${submission.campaign_id}`}
+                        className="text-sm font-medium text-primary hover:underline truncate block text-left"
+                      >
+                        {submission.campaign?.title}
+                      </Link>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs mt-1 ${getCampaignStatusColor(submission.campaign?.status || '')}`}
+                      >
+                        {submission.campaign?.status?.replace('_', ' ')}
+                      </Badge>
+                    </div>
 
+                    {/* Content Preview */}
+                    <div className="flex-1 min-w-0">
+                      {submission.post_url && (
+                        <a 
+                          href={(() => {
+                            if (!submission.post_url) return '#';
+                            
+                            // If URL already has protocol, use as is
+                            if (submission.post_url.startsWith('http://') || submission.post_url.startsWith('https://')) {
+                              return submission.post_url;
+                            }
+                            
+                            // If URL starts with www., add https://
+                            if (submission.post_url.startsWith('www.')) {
+                              return `https://${submission.post_url}`;
+                            }
+                            
+                            // For other cases, add https://
+                            return `https://${submission.post_url}`;
+                          })()} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline truncate block text-left"
+                        >
+                          {submission.post_url}
+                        </a>
+                      )}
+                      {submission.media_urls && submission.media_urls.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <FileText className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">{submission.media_urls.length} files</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status */}
+                    <div className="w-24 flex justify-start">
+                      <Badge className={`${getStatusColor(submission.status)} border text-xs`}>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(submission.status)}
+                          {submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : 'Unknown'}
+                        </div>
+                      </Badge>
+                    </div>
+
+                    {/* Views */}
+                    <div className="w-20 text-sm text-muted-foreground text-left">
+                      {submission.views ? submission.views.toLocaleString() : '0'}
+                    </div>
+
+                    {/* Date */}
+                    <div className="w-24 text-sm text-muted-foreground text-left">
+                      {new Date(submission.created_at).toLocaleDateString()}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="w-40 flex items-center justify-start gap-1">
                       {/* Quick Actions for Pending */}
                       {submission.status === 'pending' && (
-                        <div className="flex gap-2 mb-2">
+                        <>
                           <Button
                             size="sm"
                             onClick={() => handleSubmissionAction(submission, 'approve')}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 px-2 py-1 h-7"
                           >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
+                            <CheckCircle className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => handleSubmissionAction(submission, 'reject')}
-                            className="flex-1"
+                            className="px-2 py-1 h-7"
                           >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
+                            <XCircle className="h-3 w-3" />
                           </Button>
-                        </div>
+                        </>
                       )}
 
                       {/* Secondary Actions */}
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSubmissionAction(submission, 'feedback')}
-                          className="flex-1"
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSubmissionAction(submission, 'feedback')}
+                        className="px-2 py-1 h-7"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        asChild
+                        className="px-2 py-1 h-7"
+                      >
+                        <a 
+                          href={(() => {
+                            if (!submission.post_url) return '#';
+                            
+                            // If URL already has protocol, use as is
+                            if (submission.post_url.startsWith('http://') || submission.post_url.startsWith('https://')) {
+                              return submission.post_url;
+                            }
+                            
+                            // If URL starts with www., add https://
+                            if (submission.post_url.startsWith('www.')) {
+                              return `https://${submission.post_url}`;
+                            }
+                            
+                            // For other cases, add https://
+                            return `https://${submission.post_url}`;
+                          })()} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
                         >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          {submission.feedback ? 'Edit' : 'Feedback'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          asChild
-                          className="flex-1"
-                        >
-                          <a href={submission.post_url} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            View
-                          </a>
-                        </Button>
-                      </div>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -779,7 +765,22 @@ export default function BrandSubmissionsPage() {
                 <p className="text-sm font-medium">Creator: {selectedSubmission.creator?.name}</p>
                 <p className="text-sm text-muted-foreground">Campaign: {selectedSubmission.campaign?.title}</p>
                 <a 
-                  href={selectedSubmission.post_url} 
+                  href={(() => {
+                    if (!selectedSubmission.post_url) return '#';
+                    
+                    // If URL already has protocol, use as is
+                    if (selectedSubmission.post_url.startsWith('http://') || selectedSubmission.post_url.startsWith('https://')) {
+                      return selectedSubmission.post_url;
+                    }
+                    
+                    // If URL starts with www., add https://
+                    if (selectedSubmission.post_url.startsWith('www.')) {
+                      return `https://${selectedSubmission.post_url}`;
+                    }
+                    
+                    // For other cases, add https://
+                    return `https://${selectedSubmission.post_url}`;
+                  })()} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"

@@ -819,7 +819,22 @@ export default function CampaignDetailPage() {
                               <div className="flex items-center gap-2">
                                 <Link className="w-4 h-4 text-blue-500" />
                                 <a 
-                                  href={submission.post_url} 
+                                  href={(() => {
+                                    if (!submission.post_url) return '#';
+                                    
+                                    // If URL already has protocol, use as is
+                                    if (submission.post_url.startsWith('http://') || submission.post_url.startsWith('https://')) {
+                                      return submission.post_url;
+                                    }
+                                    
+                                    // If URL starts with www., add https://
+                                    if (submission.post_url.startsWith('www.')) {
+                                      return `https://${submission.post_url}`;
+                                    }
+                                    
+                                    // For other cases, add https://
+                                    return `https://${submission.post_url}`;
+                                  })()} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline font-medium"

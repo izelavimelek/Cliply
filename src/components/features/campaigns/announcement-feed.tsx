@@ -19,27 +19,36 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Zap
+  Zap,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Announcement } from "./types";
 
 interface AnnouncementFeedProps {
   campaignId: string;
   brandId: string;
+  isDialogOpen?: boolean;
+  setIsDialogOpen?: (open: boolean) => void;
 }
 
-export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps) {
+export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIsDialogOpen, setIsDialogOpen: externalSetIsDialogOpen }: AnnouncementFeedProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [internalIsDialogOpen, setInternalIsDialogOpen] = useState(false);
+  
+  // Use external dialog state if provided, otherwise use internal state
+  const isDialogOpen = externalIsDialogOpen !== undefined ? externalIsDialogOpen : internalIsDialogOpen;
+  const setIsDialogOpen = externalSetIsDialogOpen || setInternalIsDialogOpen;
+  const [expandedAnnouncements, setExpandedAnnouncements] = useState<Set<string>>(new Set());
 
   // Form state
   const [formData, setFormData] = useState({
     title: "",
     content: "",
-    priority: "normal" as "low" | "normal" | "high" | "urgent"
+    priority: "MEDIUM" as "LOW" | "MEDIUM" | "HIGH" | "URGENT"
   });
 
   useEffect(() => {
@@ -187,7 +196,7 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
     setFormData({
       title: "",
       content: "",
-      priority: "normal"
+      priority: "MEDIUM"
     });
     setEditingAnnouncement(null);
   };
@@ -197,7 +206,7 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
     setFormData({
       title: announcement.title || "",
       content: announcement.content,
-      priority: announcement.priority
+      priority: announcement.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT"
     });
     setIsDialogOpen(true);
   };
@@ -209,13 +218,13 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'urgent':
+      case 'URGENT':
         return <Zap className="h-4 w-4 text-red-500" />;
-      case 'high':
+      case 'HIGH':
         return <AlertCircle className="h-4 w-4 text-orange-500" />;
-      case 'normal':
+      case 'MEDIUM':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'low':
+      case 'LOW':
         return <Clock className="h-4 w-4 text-gray-500" />;
       default:
         return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -224,13 +233,13 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent':
+      case 'URGENT':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
+      case 'HIGH':
         return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'normal':
+      case 'MEDIUM':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'low':
+      case 'LOW':
         return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
         return 'bg-green-100 text-green-800 border-green-200';
@@ -247,6 +256,28 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
     });
   };
 
+  const truncateText = (text: string, maxLength: number = 200) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const toggleExpanded = (announcementId: string) => {
+    setExpandedAnnouncements(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(announcementId)) {
+        newSet.delete(announcementId);
+      } else {
+        newSet.add(announcementId);
+      }
+      return newSet;
+    });
+  };
+
+  const isExpanded = (announcementId: string) => {
+    return expandedAnnouncements.has(announcementId);
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -257,78 +288,69 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Announcements</h2>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Announcement
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title (Optional)</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter announcement title..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="content">Content *</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="What's happening with this campaign?"
-                  rows={4}
-                />
-              </div>
-              <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value: "low" | "normal" | "high" | "urgent") => 
-                    setFormData(prev => ({ ...prev, priority: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={editingAnnouncement ? handleUpdateAnnouncement : handleCreateAnnouncement}
-                  disabled={!formData.content.trim()}
-                >
-                  {editingAnnouncement ? 'Update' : 'Create'} Announcement
-                </Button>
-              </div>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl p-8">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-xl">
+              {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm font-medium">Title (Optional)</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter announcement title..."
+                className="h-10"
+              />
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="content" className="text-sm font-medium">Content *</Label>
+              <Textarea
+                id="content"
+                value={formData.content}
+                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="What's happening with this campaign?"
+                rows={6}
+                className="resize-none min-h-[120px] max-h-[300px] overflow-y-auto"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority" className="text-sm font-medium">Priority</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value: "LOW" | "MEDIUM" | "HIGH" | "URGENT") => 
+                  setFormData(prev => ({ ...prev, priority: value }))
+                }
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">LOW</SelectItem>
+                  <SelectItem value="MEDIUM">MEDIUM</SelectItem>
+                  <SelectItem value="HIGH">HIGH</SelectItem>
+                  <SelectItem value="URGENT">URGENT</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-6 border-t">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="h-10 px-6">
+              Cancel
+            </Button>
+            <Button 
+              onClick={editingAnnouncement ? handleUpdateAnnouncement : handleCreateAnnouncement}
+              disabled={!formData.content.trim()}
+              className="h-10 px-6"
+            >
+              {editingAnnouncement ? 'Update' : 'Create'} Announcement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {announcements.length === 0 ? (
         <Card className="p-8 text-center">
@@ -343,65 +365,133 @@ export function AnnouncementFeed({ campaignId, brandId }: AnnouncementFeedProps)
           </Button>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {announcements.map((announcement) => (
-            <Card key={announcement.id} className={`p-6 ${announcement.is_pinned ? 'ring-2 ring-blue-200 bg-blue-50/50' : ''}`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  {announcement.is_pinned && (
-                    <Pin className="h-4 w-4 text-blue-500" />
-                  )}
-                  <div className="flex items-center gap-2">
-                    {getPriorityIcon(announcement.priority)}
-                    <Badge className={getPriorityColor(announcement.priority)}>
-                      {announcement.priority}
-                    </Badge>
+        <div className="space-y-3">
+          {announcements.map((announcement) => {
+            const isExpandedState = isExpanded(announcement.id);
+            const shouldTruncate = announcement.content.length > 200;
+            const displayContent = isExpandedState || !shouldTruncate 
+              ? announcement.content 
+              : truncateText(announcement.content);
+
+            return (
+              <div key={announcement.id} className="flex gap-4">
+                {/* Date/Time Column - Outside the card */}
+                <div className="flex-shrink-0 w-24 text-right pt-4">
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(announcement.created_at).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(announcement.created_at).toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      hour12: true 
+                    })}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleTogglePin(announcement)}
-                  >
-                    {announcement.is_pinned ? (
-                      <PinOff className="h-4 w-4" />
-                    ) : (
-                      <Pin className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(announcement)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteAnnouncement(announcement)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
 
-              {announcement.title && (
-                <h3 className="text-lg font-semibold mb-2">{announcement.title}</h3>
-              )}
-              
-              <p className="text-gray-700 mb-4 whitespace-pre-wrap">{announcement.content}</p>
-              
-              <div className="text-sm text-muted-foreground">
-                {formatDate(announcement.created_at)}
-                {announcement.updated_at !== announcement.created_at && (
-                  <span className="ml-2">(edited)</span>
-                )}
+                {/* Announcement Card */}
+                <Card className={`flex-1 p-4 pl-6 pr-6 hover:shadow-md transition-shadow ${announcement.is_pinned ? 'ring-2 ring-blue-200 bg-blue-50/50' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    {/* Avatar/Icon */}
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <MessageSquare className="h-5 w-5 text-primary" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm">{announcement.brand_name || 'Campaign Team'}</span>
+                        {announcement.is_pinned && (
+                          <>
+                            <span className="text-muted-foreground text-sm">·</span>
+                            <Pin className="h-3 w-3 text-blue-500" />
+                          </>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Badge className={`${getPriorityColor(announcement.priority)} text-xs`}>
+                            {announcement.priority}
+                          </Badge>
+                        </div>
+                      </div>
+
+                    {/* Title */}
+                    {announcement.title && (
+                      <h3 className="font-semibold text-base mb-2">{announcement.title}</h3>
+                    )}
+                    
+                    {/* Content */}
+                    <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                      {displayContent}
+                    </div>
+
+                    {/* Read More/Less Button */}
+                    {shouldTruncate && (
+                      <button
+                        onClick={() => toggleExpanded(announcement.id)}
+                        className="text-primary hover:text-primary/80 text-sm font-medium mt-1 flex items-center gap-1"
+                      >
+                        {isExpandedState ? (
+                          <>
+                            Show less
+                            <ChevronUp className="h-3 w-3" />
+                          </>
+                        ) : (
+                          <>
+                            Show more
+                            <ChevronDown className="h-3 w-3" />
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Edit indicator */}
+                    {announcement.updated_at !== announcement.created_at && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        (edited)
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1 mt-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleTogglePin(announcement)}
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                      >
+                        {announcement.is_pinned ? (
+                          <PinOff className="h-4 w-4" />
+                        ) : (
+                          <Pin className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(announcement)}
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteAnnouncement(announcement)}
+                        className="h-8 px-2 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

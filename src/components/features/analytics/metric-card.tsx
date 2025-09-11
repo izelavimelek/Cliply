@@ -10,7 +10,7 @@ interface MetricCardProps {
   subtitle?: string;
   icon: LucideIcon;
   trend?: {
-    value: number;
+    value: number | null;
     period: string;
   } | null;
   className?: string;
@@ -25,14 +25,14 @@ export function MetricCard({
   className 
 }: MetricCardProps) {
   const getTrendIcon = () => {
-    if (!trend) return null;
+    if (!trend || trend.value === null) return null;
     if (trend.value > 0) return <TrendingUp className="h-4 w-4 text-green-500" />;
     if (trend.value < 0) return <TrendingDown className="h-4 w-4 text-red-500" />;
     return <Minus className="h-4 w-4 text-gray-500" />;
   };
 
   const getTrendColor = () => {
-    if (!trend) return "text-muted-foreground";
+    if (!trend || trend.value === null) return "text-muted-foreground";
     if (trend.value > 0) return "text-green-500";
     if (trend.value < 0) return "text-red-500";
     return "text-gray-500";
@@ -52,7 +52,7 @@ export function MetricCard({
               <div className="flex items-center gap-1">
                 {getTrendIcon()}
                 <span className={cn("text-sm font-medium", getTrendColor())}>
-                  {Math.abs(trend.value)}% {trend.period}
+                  {trend.value !== null ? `${Math.abs(trend.value)}% ` : ''}{trend.period}
                 </span>
               </div>
             )}

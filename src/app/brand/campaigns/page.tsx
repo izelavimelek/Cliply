@@ -477,7 +477,7 @@ export default function BrandCampaignsPage() {
                 ) : campaign.status === 'draft' ? (
                   /* Draft Campaign Actions */
                   <>
-                    <Link href={`/brand/campaigns/${campaign._id}/edit`}>
+                    <Link href={`/brand/campaigns/${campaign._id}`}>
                       <Button variant="default" size="sm" className="w-full h-8 text-xs">
                         <Edit className="mr-1 h-3 w-3" />
                         Continue

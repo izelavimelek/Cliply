@@ -176,10 +176,14 @@ export async function getSubmissions(filters?: { creator_id?: string; campaign_i
 
   let query = {};
   if (filters?.creator_id) query = { ...query, creator_id: filters.creator_id };
-  if (filters?.campaign_id) query = { ...query, campaign_id: new ObjectId(filters.campaign_id) };
+  if (filters?.campaign_id) {
+    // Submissions are stored with campaign_id as STRING, not ObjectId
+    query = { ...query, campaign_id: filters.campaign_id };
+  }
   if (filters?.status) query = { ...query, status: filters.status };
 
   const submissions = await submissionsCollection.find(query).toArray();
+  
   return submissions as Submission[];
 }
 
@@ -511,7 +515,7 @@ export async function getAnnouncements(filters?: { campaign_id?: string; brand_i
       brand_name: brandMap.get(announcement.brand_id.toString()),
       created_at: announcement.created_at.toISOString(),
       updated_at: announcement.updated_at.toISOString(),
-    })) as Announcement[];
+    })) as unknown as Announcement[];
   } catch (error) {
     console.error('Error getting announcements:', error);
     return [];
@@ -538,7 +542,7 @@ export async function getAnnouncement(id: string): Promise<Announcement | null> 
       brand_name: brand?.name,
       created_at: announcement.created_at.toISOString(),
       updated_at: announcement.updated_at.toISOString(),
-    } as Announcement;
+    } as unknown as Announcement;
   } catch (error) {
     console.error('Error getting announcement:', error);
     return null;
@@ -576,7 +580,7 @@ export async function updateAnnouncement(id: string, updateData: Partial<Announc
       brand_name: brand?.name,
       created_at: result.created_at.toISOString(),
       updated_at: result.updated_at.toISOString(),
-    } as Announcement;
+    } as unknown as Announcement;
   } catch (error) {
     console.error('Error updating announcement:', error);
     return null;

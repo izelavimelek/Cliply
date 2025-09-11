@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { campaign_id, content, title, priority = 'normal' } = body;
+    const { campaign_id, content, title, priority = 'MEDIUM' } = body;
 
     if (!campaign_id || !content) {
       return NextResponse.json(
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       content,
       title,
       is_pinned: false,
-      priority: priority as 'low' | 'normal' | 'high' | 'urgent',
+      priority: priority as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
       created_by: user.userId,
     });
 

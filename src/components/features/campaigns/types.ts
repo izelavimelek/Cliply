@@ -89,10 +89,16 @@ export interface Campaign {
 export interface Submission {
   id: string;
   creator_name: string;
+  creator_username?: string;
+  creator_bio?: string | null;
+  creator_website?: string | null;
   post_url: string;
+  media_urls?: string[];
   status: string;
   views: number;
   created_at: string;
+  feedback?: string;
+  verified_at?: string;
 }
 
 export interface Announcement {
@@ -102,7 +108,7 @@ export interface Announcement {
   content: string;
   title?: string;
   is_pinned: boolean;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   created_by: string;
   updated_by?: string;
   created_at: string;

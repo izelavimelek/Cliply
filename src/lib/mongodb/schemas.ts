@@ -210,7 +210,7 @@ export interface Announcement extends BaseDocument {
   content: string;
   title?: string;
   is_pinned: boolean;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   created_by: string; // brand user_id
   updated_by?: string;
 }

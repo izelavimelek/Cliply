@@ -35,7 +35,7 @@ async function getUserFromToken(request: NextRequest) {
 
 export async function POST(request: NextRequest, context: unknown) {
   try {
-    const { params } = context as SubmissionParams;
+    const { params } = await (context as Promise<SubmissionParams>);
     const { id: submissionId } = params;
     
     if (!ObjectId.isValid(submissionId)) {
