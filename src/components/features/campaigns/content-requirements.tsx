@@ -43,7 +43,7 @@ export function ContentRequirements({
 }: ContentRequirementsProps) {
 
   // Get content requirements progress from centralized validation
-  const contentProgress = getContentRequirementsProgress(sectionData);
+  const contentProgress = getContentRequirementsProgress(campaign);
 
   return (
     <div className="space-y-6">
@@ -246,11 +246,7 @@ export function ContentRequirements({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-base">Short Clips (≤60s)</h4>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
+                      <h4 className="font-medium text-base">Short Clips (≤60s)<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                     </div>
                     <p className="text-foreground text-2xl font-semibold">
                       {campaign?.deliverable_quantity?.clips || <span className="text-muted-foreground italic text-base">Not set</span>}
@@ -258,11 +254,7 @@ export function ContentRequirements({
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-base">Long Videos (&gt;60s)</h4>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
+                      <h4 className="font-medium text-base">Long Videos (&gt;60s)<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                     </div>
                     <p className="text-foreground text-2xl font-semibold">
                       {campaign?.deliverable_quantity?.long_videos || <span className="text-muted-foreground italic text-base">Not set</span>}
@@ -270,11 +262,7 @@ export function ContentRequirements({
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-base">Static Images</h4>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
+                      <h4 className="font-medium text-base">Static Images<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                     </div>
                     <p className="text-foreground text-2xl font-semibold">
                       {campaign?.deliverable_quantity?.images || <span className="text-muted-foreground italic text-base">Not set</span>}
@@ -336,9 +324,8 @@ export function ContentRequirements({
                   <div>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="logo_placement" className="text-sm font-medium">
-                        Logo Placement Required
+                        Logo Placement Required<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Brand logo must be visible in the content
@@ -402,9 +389,8 @@ export function ContentRequirements({
                   <div>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="brand_mention" className="text-sm font-medium">
-                        Brand Mention Required
+                        Brand Mention Required<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Creator must verbally mention your brand
@@ -474,9 +460,8 @@ export function ContentRequirements({
                   <div>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="call_to_action" className="text-sm font-medium">
-                        Call-to-Action Required
+                        Call-to-Action Required<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Include a specific call-to-action
@@ -530,81 +515,110 @@ export function ContentRequirements({
               )}
             </div>
 
-            {/* Hashtags */}
+
+            {/* Hashtag Requirements */}
             <div className="border rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Checkbox
-                    id="hashtags_required"
-                    checked={(sectionData.required_elements?.hashtags?.length || 0) > 0}
-                    onCheckedChange={(checked) => {
-                      if (!checked) {
-                        setSectionData(prev => ({
-                          ...prev,
-                          required_elements: {
-                            ...prev.required_elements,
-                            hashtags: []
-                          }
-                        }));
+                    id="hashtag_requirements"
+                    checked={sectionData.required_elements?.hashtag_requirements || false}
+                    onCheckedChange={(checked) => setSectionData(prev => ({
+                      ...prev,
+                      required_elements: {
+                        ...prev.required_elements,
+                        hashtag_requirements: checked as boolean
                       }
-                    }}
+                    }))}
                   />
                   <div>
-                    <Label htmlFor="hashtags_required" className="text-sm font-medium">
-                      Specific Hashtags Required
-                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="hashtag_requirements" className="text-sm font-medium">
+                        Hashtag Requirements<span className="text-red-600 dark:text-red-400 ml-1">*</span>
+                      </Label>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Must use specific hashtags in posts
+                      Specify required hashtags and hashtag guidelines
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="pl-7 space-y-3 border-l-2 border-primary/20">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
+              {sectionData.required_elements?.hashtag_requirements && (
+                <div className="pl-7 space-y-3 border-l-2 border-primary/20">
+                  <div className="space-y-2">
                     <Label className="text-sm font-medium">Required hashtags</Label>
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  </div>
-                  <Textarea
-                    placeholder="Enter hashtags separated by commas (e.g., #BrandName, #Campaign2024, #Sponsored)"
-                    value={sectionData.required_elements?.hashtags?.join(', ') || ''}
-                    onChange={(e) => {
-                      const hashtags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-                      setSectionData(prev => ({
+                    <Input
+                      placeholder="e.g., #brandname #sponsored #ad"
+                      value={sectionData.required_elements?.required_hashtags || ''}
+                      onChange={(e) => setSectionData(prev => ({
                         ...prev,
                         required_elements: {
                           ...prev.required_elements,
-                          hashtags: hashtags
+                          required_hashtags: e.target.value
                         }
-                      }));
-                    }}
-                    rows={2}
-                  />
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Separate hashtags with spaces (include # symbol)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Minimum total hashtags</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 5"
+                      min="1"
+                      max="30"
+                      value={sectionData.required_elements?.min_hashtags || ''}
+                      onChange={(e) => setSectionData(prev => ({
+                        ...prev,
+                        required_elements: {
+                          ...prev.required_elements,
+                          min_hashtags: e.target.value ? parseInt(e.target.value) : undefined
+                        }
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Hashtag placement</Label>
+                    <Select
+                      value={sectionData.required_elements?.hashtag_placement || ''}
+                      onValueChange={(value) => setSectionData(prev => ({
+                        ...prev,
+                        required_elements: {
+                          ...prev.required_elements,
+                          hashtag_placement: value
+                        }
+                      }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select placement" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="caption">In caption/description</SelectItem>
+                        <SelectItem value="video_overlay">Video overlay/text</SelectItem>
+                        <SelectItem value="both">Both caption and video</SelectItem>
+                        <SelectItem value="any">Creator's choice</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Additional hashtag instructions</Label>
+                    <Textarea
+                      placeholder="e.g., Include trending hashtags relevant to your niche, avoid controversial hashtags..."
+                      value={sectionData.required_elements?.hashtag_instructions || ''}
+                      onChange={(e) => setSectionData(prev => ({
+                        ...prev,
+                        required_elements: {
+                          ...prev.required_elements,
+                          hashtag_instructions: e.target.value
+                        }
+                      }))}
+                      rows={2}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Hashtag placement</Label>
-                  <Select
-                    value={sectionData.required_elements?.hashtag_placement || ''}
-                    onValueChange={(value) => setSectionData(prev => ({
-                      ...prev,
-                      required_elements: {
-                        ...prev.required_elements,
-                        hashtag_placement: value
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Where should hashtags appear?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="caption">In post caption</SelectItem>
-                      <SelectItem value="description">In video description</SelectItem>
-                      <SelectItem value="comments">In first comment</SelectItem>
-                      <SelectItem value="anywhere">Anywhere visible</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Additional Requirements */}
@@ -666,72 +680,283 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Display mode - show configured required elements */}
+                {/* Display mode - show all required elements with their status */}
                 <div className="space-y-3">
-                  {campaign?.required_elements?.logo_placement && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <div>
-                        <span className="font-medium">Logo Placement Required</span>
-                        {campaign.required_elements.logo_instructions && (
-                          <p className="text-sm text-muted-foreground">{campaign.required_elements.logo_instructions}</p>
+                  {/* Logo Placement */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.required_elements?.logo_placement 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      console.log('Logo placement clicked');
+                      // First open edit mode
+                      startEditing('required-elements');
+                      // Then immediately set the selection
+                      setTimeout(() => {
+                        setSectionData(prev => ({
+                          ...prev,
+                          required_elements: {
+                            ...campaign?.required_elements,
+                            ...prev.required_elements,
+                            logo_placement: true
+                          }
+                        }));
+                      }, 50);
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.required_elements?.logo_placement 
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.required_elements?.logo_placement ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Logo Placement Required<span className="text-red-600 dark:text-red-400 ml-1">*</span></span>
+                        {campaign?.required_elements?.logo_placement && (
+                          <Badge variant="secondary" className="text-xs">Enabled</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Brand logo must be visible in the content
+                      </p>
+                      {campaign?.required_elements?.logo_placement && campaign.required_elements.logo_instructions && (
+                        <p className="text-sm text-foreground mt-1">{campaign.required_elements.logo_instructions}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Brand Mention */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.required_elements?.brand_mention 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      console.log('Brand mention clicked');
+                      // First open edit mode
+                      startEditing('required-elements');
+                      // Then immediately set the selection
+                      setTimeout(() => {
+                        setSectionData(prev => ({
+                          ...prev,
+                          required_elements: {
+                            ...campaign?.required_elements,
+                            ...prev.required_elements,
+                            brand_mention: true
+                          }
+                        }));
+                      }, 50);
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.required_elements?.brand_mention 
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.required_elements?.brand_mention ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Brand Mention Required<span className="text-red-600 dark:text-red-400 ml-1">*</span></span>
+                        {campaign?.required_elements?.brand_mention && (
+                          <Badge variant="secondary" className="text-xs">Enabled</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Creator must verbally mention your brand
+                      </p>
+                      {campaign?.required_elements?.brand_mention && campaign.required_elements.brand_phrase && (
+                        <p className="text-sm text-foreground mt-1">"{campaign.required_elements.brand_phrase}"</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Call to Action */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.required_elements?.call_to_action 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      console.log('Call to action clicked');
+                      // First open edit mode
+                      startEditing('required-elements');
+                      // Then immediately set the selection
+                      setTimeout(() => {
+                        setSectionData(prev => ({
+                          ...prev,
+                          required_elements: {
+                            ...campaign?.required_elements,
+                            ...prev.required_elements,
+                            call_to_action: true
+                          }
+                        }));
+                      }, 50);
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.required_elements?.call_to_action 
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.required_elements?.call_to_action ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Call-to-Action Required<span className="text-red-600 dark:text-red-400 ml-1">*</span></span>
+                        {campaign?.required_elements?.call_to_action && (
+                          <Badge variant="secondary" className="text-xs">Enabled</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Include a specific call-to-action
+                      </p>
+                      {campaign?.required_elements?.call_to_action && campaign.required_elements.cta_text && (
+                        <p className="text-sm text-foreground mt-1">{campaign.required_elements.cta_text}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Hashtag Requirements */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.required_elements?.hashtag_requirements 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      console.log('Hashtag requirements clicked');
+                      // First open edit mode
+                      startEditing('required-elements');
+                      // Then immediately set the selection
+                      setTimeout(() => {
+                        setSectionData(prev => ({
+                          ...prev,
+                          required_elements: {
+                            ...campaign?.required_elements,
+                            ...prev.required_elements,
+                            hashtag_requirements: true
+                          }
+                        }));
+                      }, 50);
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.required_elements?.hashtag_requirements 
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.required_elements?.hashtag_requirements ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Hashtag Requirements<span className="text-red-600 dark:text-red-400 ml-1">*</span></span>
+                        {campaign?.required_elements?.hashtag_requirements && (
+                          <Badge variant="secondary" className="text-xs">Enabled</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Specify required hashtags and hashtag guidelines
+                      </p>
+                      <div className="mt-1 space-y-1">
+                        {campaign?.required_elements?.hashtag_requirements && campaign.required_elements.required_hashtags && (
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">Required:</span> {campaign.required_elements.required_hashtags}
+                          </p>
+                        )}
+                        {campaign?.required_elements?.hashtag_requirements && campaign.required_elements.min_hashtags && (
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">Minimum total:</span> {campaign.required_elements.min_hashtags} hashtags
+                          </p>
+                        )}
+                        {campaign?.required_elements?.hashtag_requirements && campaign.required_elements.hashtag_placement && (
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">Placement:</span> {
+                              campaign.required_elements.hashtag_placement === 'caption' ? 'In caption/description' :
+                              campaign.required_elements.hashtag_placement === 'video_overlay' ? 'Video overlay/text' :
+                              campaign.required_elements.hashtag_placement === 'both' ? 'Both caption and video' :
+                              campaign.required_elements.hashtag_placement === 'any' ? 'Creator\'s choice' :
+                              campaign.required_elements.hashtag_placement
+                            }
+                          </p>
                         )}
                       </div>
                     </div>
-                  )}
+                  </div>
                   
-                  {campaign?.required_elements?.brand_mention && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <div>
-                        <span className="font-medium">Brand Mention Required</span>
-                        {campaign.required_elements.brand_phrase && (
-                          <p className="text-sm text-muted-foreground">"{campaign.required_elements.brand_phrase}"</p>
-                        )}
-                      </div>
+                  {/* Additional Requirements */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.required_elements?.additional_requirements
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      console.log('Additional requirements clicked');
+                      // First open edit mode
+                      startEditing('required-elements');
+                      // Then immediately set the selection
+                      setTimeout(() => {
+                        setSectionData(prev => ({
+                          ...prev,
+                          required_elements: {
+                            ...campaign?.required_elements,
+                            ...prev.required_elements,
+                            additional_requirements: campaign?.required_elements?.additional_requirements || ''
+                          }
+                        }));
+                      }, 50);
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.required_elements?.additional_requirements
+                        ? 'bg-green-100 dark:bg-green-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.required_elements?.additional_requirements ? (
+                        <CheckCircle className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
                     </div>
-                  )}
-                  
-                  {campaign?.required_elements?.call_to_action && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <div>
-                        <span className="font-medium">Call-to-Action Required</span>
-                        {campaign.required_elements.cta_text && (
-                          <p className="text-sm text-muted-foreground">{campaign.required_elements.cta_text}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {campaign?.required_elements?.hashtags && campaign.required_elements.hashtags.length > 0 && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <div>
-                        <span className="font-medium">Required Hashtags</span>
-                        <p className="text-sm text-muted-foreground">{campaign.required_elements.hashtags.join(', ')}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {campaign?.required_elements?.additional_requirements && (
-                    <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
                         <span className="font-medium">Additional Requirements</span>
-                        <p className="text-sm text-muted-foreground">{campaign.required_elements.additional_requirements}</p>
+                        {campaign?.required_elements?.additional_requirements && (
+                          <Badge variant="secondary" className="text-xs">Enabled</Badge>
+                        )}
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Any other specific requirements for content creation
+                      </p>
+                      {campaign?.required_elements?.additional_requirements && (
+                        <p className="text-sm text-foreground mt-1">{campaign.required_elements.additional_requirements}</p>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-                
-                {!campaign?.required_elements?.logo_placement && 
-                 !campaign?.required_elements?.brand_mention && 
-                 !campaign?.required_elements?.call_to_action && 
-                 (!campaign?.required_elements?.hashtags || campaign.required_elements.hashtags.length === 0) &&
-                 !campaign?.required_elements?.additional_requirements && (
-                  <p className="text-sm text-muted-foreground italic">Click edit to set what creators must include (logos, brand mentions, CTAs, hashtags)</p>
-                )}
               </div>
             )}
           </CardContent>
@@ -865,46 +1090,194 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Display mode - show configured prohibited content */}
+                {/* Display mode - show all prohibited content options with their status */}
                 <div className="space-y-3">
-                  {campaign?.prohibited_content?.competitor_brands && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                      <Shield className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-800 dark:text-red-200">Competitor brands prohibited</span>
+                  {/* Competitor Brands */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.prohibited_content?.competitor_brands 
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      // Quick toggle - update immediately
+                      const newValue = !campaign?.prohibited_content?.competitor_brands;
+                      setSectionData(prev => ({
+                        ...prev,
+                        prohibited_content: {
+                          ...prev.prohibited_content,
+                          competitor_brands: newValue
+                        }
+                      }));
+                      // Auto-save the selection
+                      saveSection('prohibited-content', {
+                        prohibited_content: {
+                          ...campaign?.prohibited_content,
+                          competitor_brands: newValue
+                        }
+                      });
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.prohibited_content?.competitor_brands 
+                        ? 'bg-red-100 dark:bg-red-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.prohibited_content?.competitor_brands ? (
+                        <Shield className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
                     </div>
-                  )}
-                  
-                  {campaign?.prohibited_content?.profanity && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                      <Shield className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-800 dark:text-red-200">Profanity prohibited</span>
-                    </div>
-                  )}
-                  
-                  {campaign?.prohibited_content?.political && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                      <Shield className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-800 dark:text-red-200">Political content prohibited</span>
-                    </div>
-                  )}
-                  
-                  {campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0 && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                      <Shield className="h-4 w-4 text-red-600 mt-0.5" />
-                      <div>
-                        <span className="font-medium text-red-800 dark:text-red-200">Custom prohibited content:</span>
-                        <p className="text-sm text-red-700 dark:text-red-300 mt-1">{campaign.prohibited_content.custom.join(', ')}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Competitor brands</span>
+                        {campaign?.prohibited_content?.competitor_brands && (
+                          <Badge variant="destructive" className="text-xs">Prohibited</Badge>
+                        )}
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        No competitor brand mentions or references allowed
+                      </p>
                     </div>
-                  )}
+                  </div>
+                  
+                  {/* Profanity */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.prohibited_content?.profanity 
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      // Quick toggle - update immediately
+                      const newValue = !campaign?.prohibited_content?.profanity;
+                      setSectionData(prev => ({
+                        ...prev,
+                        prohibited_content: {
+                          ...prev.prohibited_content,
+                          profanity: newValue
+                        }
+                      }));
+                      // Auto-save the selection
+                      saveSection('prohibited-content', {
+                        prohibited_content: {
+                          ...campaign?.prohibited_content,
+                          profanity: newValue
+                        }
+                      });
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.prohibited_content?.profanity 
+                        ? 'bg-red-100 dark:bg-red-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.prohibited_content?.profanity ? (
+                        <Shield className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Profanity or inappropriate language</span>
+                        {campaign?.prohibited_content?.profanity && (
+                          <Badge variant="destructive" className="text-xs">Prohibited</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        No profanity, inappropriate language, or offensive content
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Political Content */}
+                  <div 
+                    className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.prohibited_content?.political 
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => {
+                      // Quick toggle - update immediately
+                      const newValue = !campaign?.prohibited_content?.political;
+                      setSectionData(prev => ({
+                        ...prev,
+                        prohibited_content: {
+                          ...prev.prohibited_content,
+                          political: newValue
+                        }
+                      }));
+                      // Auto-save the selection
+                      saveSection('prohibited-content', {
+                        prohibited_content: {
+                          ...campaign?.prohibited_content,
+                          political: newValue
+                        }
+                      });
+                    }}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                      campaign?.prohibited_content?.political 
+                        ? 'bg-red-100 dark:bg-red-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.prohibited_content?.political ? (
+                        <Shield className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Political content</span>
+                        {campaign?.prohibited_content?.political && (
+                          <Badge variant="destructive" className="text-xs">Prohibited</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        No political statements, endorsements, or controversial topics
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Custom Prohibited Content */}
+                  <div 
+                    className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0
+                        ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => startEditing('prohibited-content')}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full mt-0.5 ${
+                      campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0
+                        ? 'bg-red-100 dark:bg-red-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0 ? (
+                        <Shield className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Custom prohibited content</span>
+                  {campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0 && (
+                          <Badge variant="destructive" className="text-xs">Prohibited</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Specific content types to avoid (alcohol, gambling, etc.)
+                      </p>
+                      {campaign?.prohibited_content?.custom && campaign.prohibited_content.custom.length > 0 && (
+                        <p className="text-sm text-foreground mt-1">{campaign.prohibited_content.custom.join(', ')}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                {!campaign?.prohibited_content?.competitor_brands && 
-                 !campaign?.prohibited_content?.profanity && 
-                 !campaign?.prohibited_content?.political && 
-                 (!campaign?.prohibited_content?.custom || campaign.prohibited_content.custom.length === 0) && (
-                  <p className="text-sm text-muted-foreground italic">Click edit to define what content creators must avoid (competitors, profanity, politics)</p>
-                )}
               </div>
             )}
           </CardContent>
@@ -991,23 +1364,52 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
-                {campaign?.tone_style ? (
-                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
-                    <Settings className="h-4 w-4 text-primary" />
-                    <div>
-                      <span className="font-medium">Content Tone: </span>
-                      <span className="capitalize">
-                        {campaign.tone_style === 'fun' && 'Fun & Playful'}
-                        {campaign.tone_style === 'professional' && 'Professional & Corporate'}
-                        {campaign.tone_style === 'educational' && 'Educational & Informative'}
-                        {campaign.tone_style === 'cinematic' && 'Cinematic & Artistic'}
-                        {campaign.tone_style === 'casual' && 'Casual & Conversational'}
-                      </span>
+                {/* Display mode - show all tone options with current selection */}
+                <div className="space-y-3">
+                  {[
+                    { value: 'fun', label: 'Fun & Playful', description: 'Lighthearted, energetic, and entertaining content' },
+                    { value: 'professional', label: 'Professional & Corporate', description: 'Formal, business-focused, and authoritative tone' },
+                    { value: 'educational', label: 'Educational & Informative', description: 'Informative, instructional, and knowledge-sharing content' },
+                    { value: 'cinematic', label: 'Cinematic & Artistic', description: 'High-quality, visually stunning, and creative content' },
+                    { value: 'casual', label: 'Casual & Conversational', description: 'Relaxed, friendly, and conversational tone' }
+                  ].map((tone) => (
+                    <div 
+                      key={tone.value} 
+                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        campaign?.tone_style === tone.value 
+                          ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
+                          : 'bg-muted/30 border-border hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        // Quick selection - update immediately
+                        setSectionData(prev => ({ ...prev, tone_style: tone.value }));
+                        // Auto-save the selection
+                        saveSection('tone-style', { tone_style: tone.value });
+                      }}
+                    >
+                      <div className={`flex items-center justify-center w-5 h-5 rounded-full ${
+                        campaign?.tone_style === tone.value 
+                          ? 'bg-primary/20' 
+                          : 'bg-muted'
+                      }`}>
+                        {campaign?.tone_style === tone.value ? (
+                          <Settings className="h-3 w-3 text-primary" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{tone.label}</span>
+                          {campaign?.tone_style === tone.value && (
+                            <Badge variant="secondary" className="text-xs">Selected</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{tone.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to choose the desired tone (fun, professional, educational, cinematic, casual)</p>
-                )}
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
@@ -1086,17 +1488,43 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Display mode - show music guidelines status */}
+                <div className="space-y-3">
+                  <div 
+                    className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.music_guidelines 
+                        ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => startEditing('music-audio')}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full mt-0.5 ${
+                      campaign?.music_guidelines 
+                        ? 'bg-primary/20' 
+                        : 'bg-muted'
+                    }`}>
                 {campaign?.music_guidelines ? (
-                  <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg">
-                    <MessageSquare className="h-4 w-4 text-primary mt-0.5" />
-                    <div>
-                      <span className="font-medium">Music & Audio Guidelines:</span>
-                      <p className="text-sm text-muted-foreground mt-1">{campaign.music_guidelines}</p>
+                        <MessageSquare className="h-3 w-3 text-primary" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Music & Audio Guidelines</span>
+                        {campaign?.music_guidelines && (
+                          <Badge variant="secondary" className="text-xs">Configured</Badge>
+                        )}
+                  </div>
+                      <p className="text-xs text-muted-foreground">
+                        Specify audio requirements, music preferences, and sound guidelines
+                      </p>
+                      {campaign?.music_guidelines && (
+                        <p className="text-sm text-foreground mt-1">{campaign.music_guidelines}</p>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to add music and audio guidelines</p>
-                )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -1185,14 +1613,43 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Display mode - show example references status */}
+                <div className="space-y-3">
+                  <div 
+                    className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.example_references && campaign.example_references.length > 0
+                        ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => startEditing('example-references')}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full mt-0.5 ${
+                      campaign?.example_references && campaign.example_references.length > 0
+                        ? 'bg-primary/20' 
+                        : 'bg-muted'
+                    }`}>
                 {campaign?.example_references && campaign.example_references.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Eye className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Example References ({campaign.example_references.length})</span>
+                        <Eye className="h-3 w-3 text-primary" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
                     </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Example References</span>
+                        {campaign?.example_references && campaign.example_references.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {campaign.example_references.length} {campaign.example_references.length === 1 ? 'reference' : 'references'}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Provide URLs to examples that creators can reference for inspiration
+                      </p>
+                      {campaign?.example_references && campaign.example_references.length > 0 && (
+                        <div className="mt-2 space-y-1">
                     {campaign.example_references.map((url, index) => (
-                      <div key={index} className="p-3 bg-primary/5 rounded-lg">
+                            <div key={index} className="p-2 bg-background rounded border">
                         <a 
                           href={url} 
                           target="_blank" 
@@ -1204,9 +1661,10 @@ export function ContentRequirements({
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to add example references and inspiration links</p>
-                )}
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
@@ -1301,31 +1759,80 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
-                {(campaign?.requirements || campaign?.rules) ? (
+                {/* Display mode - show all general requirements options with their status */}
                   <div className="space-y-3">
-                    {campaign.requirements && (
-                      <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg">
-                        <FileText className="h-4 w-4 text-primary mt-0.5" />
-                        <div>
-                          <span className="font-medium">Additional Requirements:</span>
-                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{campaign.requirements}</p>
+                  {/* Additional Requirements */}
+                  <div 
+                    className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.requirements 
+                        ? 'bg-primary/5 border-primary/20 hover:bg-primary/10' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => startEditing('general-requirements')}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full mt-0.5 ${
+                      campaign?.requirements 
+                        ? 'bg-primary/20' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.requirements ? (
+                        <FileText className="h-3 w-3 text-primary" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                      )}
+                        </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Additional Requirements</span>
+                        {campaign?.requirements && (
+                          <Badge variant="secondary" className="text-xs">Configured</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Technical specifications, quality standards, and specific content requirements
+                      </p>
+                      {campaign?.requirements && (
+                        <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{campaign.requirements}</p>
+                      )}
                         </div>
                       </div>
-                    )}
-                    
-                    {campaign.rules && (
-                      <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                        <Shield className="h-4 w-4 text-orange-600 mt-0.5" />
-                        <div>
-                          <span className="font-medium text-orange-800 dark:text-orange-200">Rules & Guidelines:</span>
-                          <p className="text-sm text-orange-700 dark:text-orange-300 mt-1 whitespace-pre-wrap">{campaign.rules}</p>
-                        </div>
-                      </div>
+                  
+                  {/* Rules & Guidelines */}
+                  <div 
+                    className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      campaign?.rules 
+                        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-950/30' 
+                        : 'bg-muted/30 border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => startEditing('general-requirements')}
+                  >
+                    <div className={`flex items-center justify-center w-5 h-5 rounded-full mt-0.5 ${
+                      campaign?.rules 
+                        ? 'bg-orange-100 dark:bg-orange-900/30' 
+                        : 'bg-muted'
+                    }`}>
+                      {campaign?.rules ? (
+                        <Shield className="h-3 w-3 text-orange-600" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
                     )}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to add general requirements and campaign rules</p>
-                )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Rules & Guidelines</span>
+                        {campaign?.rules && (
+                          <Badge variant="outline" className="text-xs text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700">Configured</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Campaign rules, submission guidelines, and compliance requirements
+                      </p>
+                      {campaign?.rules && (
+                        <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{campaign.rules}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

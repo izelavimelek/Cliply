@@ -33,8 +33,12 @@ export interface CampaignData {
     call_to_action?: boolean;
     cta_type?: string;
     cta_text?: string;
-    hashtags?: string[];
+    hashtag_requirements?: boolean;
+    required_hashtags?: string;
+    min_hashtags?: number;
     hashtag_placement?: string;
+    hashtag_instructions?: string;
+    hashtags?: string[];
     additional_requirements?: string;
   };
   prohibited_content?: {
@@ -124,8 +128,12 @@ const contentRequirementsSchema = z.object({
     call_to_action: z.boolean().optional(),
     cta_type: z.string().optional(),
     cta_text: z.string().optional(),
-    hashtags: z.array(z.string()).optional(),
+    hashtag_requirements: z.boolean().optional(),
+    required_hashtags: z.string().optional(),
+    min_hashtags: z.number().min(1).max(30).optional(),
     hashtag_placement: z.string().optional(),
+    hashtag_instructions: z.string().optional(),
+    hashtags: z.array(z.string()).optional(),
     additional_requirements: z.string().optional(),
   }).optional(),
   prohibited_content: z.object({
@@ -229,36 +237,23 @@ export function validateContentRequirements(campaign: any): boolean {
       music_guidelines: campaign.music_guidelines,
     });
     
-    // For content requirements, we need at least one of the following:
-    // 1. Deliverable quantity specified (at least one type with quantity > 0)
-    // 2. Requirements or rules text
-    // 3. Required elements specified
-    // 4. Prohibited content specified
+    // For content requirements, we need ALL 7 required fields to be completed:
+    // 3 Deliverable Quantity fields + 4 Required Elements fields
     
-    const hasDeliverables = campaign.deliverable_quantity && (
-      (campaign.deliverable_quantity.clips && campaign.deliverable_quantity.clips > 0) ||
-      (campaign.deliverable_quantity.long_videos && campaign.deliverable_quantity.long_videos > 0) ||
-      (campaign.deliverable_quantity.images && campaign.deliverable_quantity.images > 0)
-    );
+    // Deliverable Quantity (3 required fields)
+    const hasClips = campaign.deliverable_quantity?.clips && campaign.deliverable_quantity.clips > 0;
+    const hasLongVideos = campaign.deliverable_quantity?.long_videos && campaign.deliverable_quantity.long_videos > 0;
+    const hasImages = campaign.deliverable_quantity?.images && campaign.deliverable_quantity.images > 0;
     
-    const hasTextContent = (campaign.requirements && campaign.requirements.length > 0) ||
-                          (campaign.rules && campaign.rules.length > 0);
+    // Required Elements (4 required fields)
+    const hasLogoPlacement = campaign.required_elements?.logo_placement;
+    const hasBrandMention = campaign.required_elements?.brand_mention;
+    const hasCallToAction = campaign.required_elements?.call_to_action;
+    const hasHashtagRequirements = campaign.required_elements?.hashtag_requirements;
     
-    const hasRequiredElements = campaign.required_elements && (
-      campaign.required_elements.logo_placement ||
-      campaign.required_elements.brand_mention ||
-      campaign.required_elements.call_to_action ||
-      (campaign.required_elements.hashtags && campaign.required_elements.hashtags.length > 0)
-    );
-    
-    const hasProhibitedContent = campaign.prohibited_content && (
-      campaign.prohibited_content.competitor_brands ||
-      campaign.prohibited_content.profanity ||
-      campaign.prohibited_content.political ||
-      (campaign.prohibited_content.custom && campaign.prohibited_content.custom.length > 0)
-    );
-    
-    return hasDeliverables || hasTextContent || hasRequiredElements || hasProhibitedContent;
+    // ALL 7 required fields must be completed
+    return hasClips && hasLongVideos && hasImages && 
+           hasLogoPlacement && hasBrandMention && hasCallToAction && hasHashtagRequirements;
   } catch {
     return false;
   }
@@ -364,36 +359,18 @@ export function getBudgetTimelineProgress(data: CampaignData): { completed: numb
 
 export function getContentRequirementsProgress(data: CampaignData): { completed: number; total: number } {
   let completed = 0;
-  const total = 4;
+  const total = 7; // Count individual required fields with asterisks
 
-  // 1. Deliverable Quantity
-  const hasDeliverables = data.deliverable_quantity && (
-    (data.deliverable_quantity.clips && data.deliverable_quantity.clips > 0) ||
-    (data.deliverable_quantity.long_videos && data.deliverable_quantity.long_videos > 0) ||
-    (data.deliverable_quantity.images && data.deliverable_quantity.images > 0)
-  );
-  if (hasDeliverables) completed++;
+  // Deliverable Quantity (3 required fields with *)
+  if (data.deliverable_quantity?.clips && data.deliverable_quantity.clips > 0) completed++;
+  if (data.deliverable_quantity?.long_videos && data.deliverable_quantity.long_videos > 0) completed++;
+  if (data.deliverable_quantity?.images && data.deliverable_quantity.images > 0) completed++;
 
-  // 2. Required Elements
-  const hasRequiredElements = data.required_elements && (
-    data.required_elements.logo_placement ||
-    data.required_elements.brand_mention ||
-    data.required_elements.call_to_action ||
-    (data.required_elements.hashtags && data.required_elements.hashtags.length > 0) ||
-    (data.required_elements.additional_requirements && data.required_elements.additional_requirements.length > 0)
-  );
-  if (hasRequiredElements) completed++;
-
-  // 3. Content Guidelines (tone, music, examples, etc.)
-  const hasGuidelines = data.tone_style || 
-                       data.music_guidelines || 
-                       (data.example_references && data.example_references.length > 0);
-  if (hasGuidelines) completed++;
-
-  // 4. General Requirements/Rules
-  const hasTextContent = (data.requirements && data.requirements.length > 0) ||
-                        (data.rules && data.rules.length > 0);
-  if (hasTextContent) completed++;
+  // Required Elements (4 required fields with *)
+  if (data.required_elements?.logo_placement) completed++;
+  if (data.required_elements?.brand_mention) completed++;
+  if (data.required_elements?.call_to_action) completed++;
+  if (data.required_elements?.hashtag_requirements) completed++;
 
   return { completed, total };
 }
@@ -482,29 +459,32 @@ export function getDetailedValidationErrors(data: CampaignData) {
 
   // Content Requirements validation
   const contentErrors: string[] = [];
-  const hasDeliverables = data.deliverable_quantity && (
-    (data.deliverable_quantity.clips && data.deliverable_quantity.clips > 0) ||
-    (data.deliverable_quantity.long_videos && data.deliverable_quantity.long_videos > 0) ||
-    (data.deliverable_quantity.images && data.deliverable_quantity.images > 0)
-  );
-  const hasTextContent = (data.requirements && data.requirements.length > 0) ||
-                        (data.rules && data.rules.length > 0);
-  const hasRequiredElements = data.required_elements && (
-    data.required_elements.logo_placement ||
-    data.required_elements.brand_mention ||
-    data.required_elements.call_to_action ||
-    (data.required_elements.hashtags && data.required_elements.hashtags.length > 0)
-  );
-  const hasProhibitedContent = data.prohibited_content && (
-    data.prohibited_content.competitor_brands ||
-    data.prohibited_content.profanity ||
-    data.prohibited_content.political ||
-    (data.prohibited_content.custom && data.prohibited_content.custom.length > 0)
-  );
   
-  if (!hasDeliverables && !hasTextContent && !hasRequiredElements && !hasProhibitedContent) {
-    contentErrors.push('At least one of the following is required: deliverable quantities, requirements/rules text, required elements, or prohibited content');
+  // Deliverable Quantity (3 required fields)
+  if (!data.deliverable_quantity?.clips || data.deliverable_quantity.clips <= 0) {
+    contentErrors.push('Short Clips quantity must be specified and greater than 0');
   }
+  if (!data.deliverable_quantity?.long_videos || data.deliverable_quantity.long_videos <= 0) {
+    contentErrors.push('Long Videos quantity must be specified and greater than 0');
+  }
+  if (!data.deliverable_quantity?.images || data.deliverable_quantity.images <= 0) {
+    contentErrors.push('Static Images quantity must be specified and greater than 0');
+  }
+  
+  // Required Elements (4 required fields)
+  if (!data.required_elements?.logo_placement) {
+    contentErrors.push('Logo Placement must be enabled');
+  }
+  if (!data.required_elements?.brand_mention) {
+    contentErrors.push('Brand Mention must be enabled');
+  }
+  if (!data.required_elements?.call_to_action) {
+    contentErrors.push('Call-to-Action must be enabled');
+  }
+  if (!data.required_elements?.hashtag_requirements) {
+    contentErrors.push('Hashtag Requirements must be enabled');
+  }
+  
   if (contentErrors.length > 0) errors['content-requirements'] = contentErrors;
 
   // Audience Targeting validation

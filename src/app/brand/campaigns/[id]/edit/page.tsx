@@ -26,6 +26,7 @@ import {
   Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { FaYoutube, FaTiktok, FaInstagram } from "react-icons/fa";
 
 const campaignEditSchema = z.object({
   title: z.string().min(1, "Campaign title is required").max(100, "Title must be less than 100 characters"),
@@ -289,9 +290,24 @@ export default function EditCampaignPage() {
                         <SelectValue placeholder="Select a platform" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="youtube">🎥 YouTube</SelectItem>
-                        <SelectItem value="tiktok">🎵 TikTok</SelectItem>
-                        <SelectItem value="instagram">📸 Instagram</SelectItem>
+                        <SelectItem value="youtube">
+                          <div className="flex items-center gap-2">
+                            <FaYoutube className="w-4 h-4 text-red-600" />
+                            YouTube
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="tiktok">
+                          <div className="flex items-center gap-2">
+                            <FaTiktok className="w-4 h-4 text-black dark:text-white" />
+                            TikTok
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="instagram">
+                          <div className="flex items-center gap-2">
+                            <FaInstagram className="w-4 h-4 text-pink-600" />
+                            Instagram
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

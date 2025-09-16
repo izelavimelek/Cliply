@@ -45,7 +45,7 @@ export function AudienceTargeting({
 }: AudienceTargetingProps) {
 
   // Get audience targeting progress from centralized validation
-  const audienceProgress = getAudienceTargetingProgress(sectionData);
+  const audienceProgress = getAudienceTargetingProgress(campaign);
 
   return (
     <div className="space-y-6">
@@ -141,11 +141,7 @@ export function AudienceTargeting({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="geography" className="text-sm font-medium text-foreground">Target Regions</Label>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                      <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                    </div>
+                    <Label htmlFor="geography" className="text-sm font-medium text-foreground">Target Regions<span className="text-red-600 dark:text-red-400 ml-1">*</span></Label>
                   </div>
                   <Textarea
                     id="geography"
@@ -200,11 +196,7 @@ export function AudienceTargeting({
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-medium text-base">Target Regions</h4>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                  </div>
+                  <h4 className="font-medium text-base">Target Regions<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                 </div>
                 {campaign?.target_geography && campaign.target_geography.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -254,11 +246,7 @@ export function AudienceTargeting({
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="languages" className="text-sm font-medium text-foreground">Target Languages</Label>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                      <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                    </div>
+                    <Label htmlFor="languages" className="text-sm font-medium text-foreground">Target Languages<span className="text-red-600 dark:text-red-400 ml-1">*</span></Label>
                   </div>
                   <Select
                     value={sectionData.target_languages?.[0] || ''}
@@ -343,11 +331,7 @@ export function AudienceTargeting({
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-medium text-base">Target Languages</h4>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                  </div>
+                  <h4 className="font-medium text-base">Target Languages<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                 </div>
                 {campaign?.target_languages && campaign.target_languages.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
@@ -398,11 +382,7 @@ export function AudienceTargeting({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="min_age" className="text-sm font-medium text-foreground">Minimum Age</Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
+                      <Label htmlFor="min_age" className="text-sm font-medium text-foreground">Minimum Age<span className="text-red-600 dark:text-red-400 ml-1">*</span></Label>
                     </div>
                     <Input
                       id="min_age"
@@ -423,11 +403,7 @@ export function AudienceTargeting({
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="max_age" className="text-sm font-medium text-foreground">Maximum Age</Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
+                      <Label htmlFor="max_age" className="text-sm font-medium text-foreground">Maximum Age<span className="text-red-600 dark:text-red-400 ml-1">*</span></Label>
                     </div>
                     <Input
                       id="max_age"
@@ -485,11 +461,7 @@ export function AudienceTargeting({
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-medium text-base">Target Age Range</h4>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                  </div>
+                  <h4 className="font-medium text-base">Target Age Range<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                 </div>
                 {campaign?.target_age_range?.min && campaign?.target_age_range?.max ? (
                   <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">

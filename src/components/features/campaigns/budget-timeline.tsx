@@ -29,7 +29,7 @@ export function BudgetTimeline({
 }: BudgetTimelineProps) {
 
   // Get budget & timeline progress from centralized validation
-  const budgetProgress = getBudgetTimelineProgress(sectionData);
+  const budgetProgress = getBudgetTimelineProgress(campaign);
   const budgetFieldsCompleted = budgetProgress.completed;
 
   return (
@@ -128,12 +128,8 @@ export function BudgetTimeline({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="start_date" className="text-sm font-bold text-foreground">
-                        Campaign Start Date
+                        Campaign Start Date<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Input
                       id="start_date"
@@ -151,12 +147,8 @@ export function BudgetTimeline({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="end_date" className="text-sm font-bold text-foreground">
-                        Campaign End Date
+                        Campaign End Date<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Input
                       id="end_date"
@@ -174,12 +166,8 @@ export function BudgetTimeline({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="submission_deadline" className="text-sm font-bold text-foreground">
-                        Submission Deadline
+                        Submission Deadline<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Input
                       id="submission_deadline"
@@ -231,11 +219,7 @@ export function BudgetTimeline({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Start Date</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Start Date<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.start_date ? (
@@ -247,11 +231,7 @@ export function BudgetTimeline({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">End Date</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">End Date<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.end_date ? (
@@ -263,11 +243,7 @@ export function BudgetTimeline({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Submission Deadline</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Submission Deadline<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.submission_deadline ? (
@@ -316,12 +292,8 @@ export function BudgetTimeline({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="total_budget" className="text-sm font-bold text-foreground">
-                        Total Campaign Budget
+                        Total Campaign Budget<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground font-medium">
@@ -352,10 +324,6 @@ export function BudgetTimeline({
                       <Label className="text-sm font-bold text-foreground">
                         Payment Structure
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Select 
                       value={sectionData.rate_type || ''} 
@@ -458,25 +426,17 @@ export function BudgetTimeline({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Total Budget</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Total Budget<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
-                      <p className="text-2xl font-bold text-foreground">
+                      <p className="text-foreground">
                         {campaign?.total_budget ? `$${campaign.total_budget.toLocaleString()}` : (
-                          <span className="text-base text-muted-foreground italic">Click edit to set budget</span>
+                          <span className="text-muted-foreground italic">Click edit to set budget</span>
                         )}
                       </p>
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Payment Type</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Payment Type<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.rate_type ? (
@@ -490,23 +450,19 @@ export function BudgetTimeline({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Rate</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Rate<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       {campaign?.rate_per_thousand ? (
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-foreground">
                           ${campaign.rate_per_thousand.toFixed(2)}
                           {campaign.rate_type === 'per_thousand' ? ' per 1K views' : ''}
                         </p>
                       ) : campaign?.fixed_fee ? (
-                        <p className="text-lg font-semibold text-foreground">
+                        <p className="text-foreground">
                           ${campaign.fixed_fee.toFixed(2)} per creator
                         </p>
                       ) : (
-                        <span className="text-base text-muted-foreground italic">Click edit to set rate</span>
+                        <span className="text-muted-foreground italic">Click edit to set rate</span>
                       )}
                     </div>
                   </div>

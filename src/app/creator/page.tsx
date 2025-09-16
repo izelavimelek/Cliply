@@ -39,6 +39,67 @@ interface Activity {
 
 export default function CreatorDashboard() {
   const { user } = useAuth();
+  
+  // TODO: Implement URL-based analytics fetching
+  // 1. Create API endpoints to fetch real-time analytics from social media platforms
+  // 2. For each approved submission with post_url, call platform-specific APIs:
+  //    - TikTok: Use TikTok Analytics API to get views, likes, comments, shares
+  //    - Instagram: Use Instagram Basic Display API or Instagram Graph API
+  //    - YouTube: Use YouTube Data API v3 to get views, likes, comments
+  // 3. Calculate engagement rate: (likes + comments + shares) / views * 100
+  // 4. Map platform from post_url domain (tiktok.com, instagram.com, youtube.com)
+  // 5. Fetch campaign details to get actual earnings amount
+  // 6. Implement caching mechanism to avoid rate limiting
+  // 7. Add error handling for failed API calls
+  // 8. Consider using webhooks for real-time updates instead of polling
+  
+  // Helper function to extract platform from post URL
+  const getPlatformFromUrl = (url: string): string => {
+    if (!url || url.trim() === '') {
+      console.log('No URL provided for platform detection');
+      return 'Unknown';
+    }
+    
+    try {
+      // Handle both http and https URLs
+      const cleanUrl = url.startsWith('http') ? url : `https://${url}`;
+      const domain = new URL(cleanUrl).hostname.toLowerCase();
+      
+      console.log('Detecting platform for URL:', url, 'Domain:', domain);
+      
+      if (domain.includes('tiktok.com')) return 'TikTok';
+      if (domain.includes('instagram.com')) return 'Instagram';
+      if (domain.includes('youtube.com') || domain.includes('youtu.be')) return 'YouTube';
+      if (domain.includes('twitter.com') || domain.includes('x.com')) return 'Twitter/X';
+      if (domain.includes('facebook.com') || domain.includes('fb.com')) return 'Facebook';
+      if (domain.includes('linkedin.com')) return 'LinkedIn';
+      if (domain.includes('snapchat.com')) return 'Snapchat';
+      
+      console.log('Unknown platform for domain:', domain);
+      return 'Unknown';
+    } catch (error) {
+      console.log('Error parsing URL:', url, error);
+      return 'Unknown';
+    }
+  };
+
+  // Helper function to format date as DD-MONTH-YYYY
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const monthNames = [
+        'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+        'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+      ];
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch {
+      return dateString; // Return original if parsing fails
+    }
+  };
+
   const [stats, setStats] = useState({
     totalEarnings: 0,
     activeSubmissions: 0,
@@ -51,101 +112,183 @@ export default function CreatorDashboard() {
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state for recent activity
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [totalActivities, setTotalActivities] = useState(0);
 
-  // Fetch creator activities and stats
-  useEffect(() => {
-    const fetchCreatorData = async () => {
-      if (!user) return;
+  // Fetch activities with pagination
+  const fetchActivities = async (page: number = currentPage) => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('auth_token');
       
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('auth_token');
-        
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-
-        // Fetch activities
-        const activitiesResponse = await fetch('/api/creator/activities', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!activitiesResponse.ok) {
-          throw new Error('Failed to fetch activities');
-        }
-
-        const activitiesData = await activitiesResponse.json();
-        setRecentActivity(activitiesData.activities || []);
-
-        // Calculate stats from activities
-        const activities = activitiesData.activities || [];
-        const totalEarnings = activities
-          .filter(a => a.type === 'payout' && a.status === 'completed')
-          .reduce((sum, a) => sum + a.amount, 0);
-        
-        const activeSubmissions = activities
-          .filter(a => a.type === 'submission' && a.status === 'pending').length;
-        
-        const completedCampaigns = activities
-          .filter(a => a.type === 'submission' && a.status === 'approved').length;
-        
-        const totalViews = activities
-          .filter(a => a.type === 'submission' && a.views)
-          .reduce((sum, a) => sum + (a.views || 0), 0);
-        
-        const pendingPayouts = activities
-          .filter(a => a.type === 'payout' && a.status === 'pending')
-          .reduce((sum, a) => sum + a.amount, 0);
-
-        setStats({
-          totalEarnings,
-          activeSubmissions,
-          completedCampaigns,
-          totalViews,
-          totalEngagement: 0, // TODO: Calculate from snapshots
-          pendingPayouts
-        });
-
-      } catch (err) {
-        console.error('Error fetching creator data:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
+      if (!token) {
+        throw new Error('No authentication token found');
       }
-    };
 
-    fetchCreatorData();
+      // Fetch activities with pagination
+      const activitiesResponse = await fetch(`/api/creator/activities?page=${page}&limit=5`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!activitiesResponse.ok) {
+        throw new Error('Failed to fetch activities');
+      }
+
+      const activitiesData = await activitiesResponse.json();
+      setRecentActivity(activitiesData.activities || []);
+      setTotalPages(activitiesData.totalPages || 1);
+      setHasNextPage(activitiesData.hasNextPage || false);
+      setHasPrevPage(activitiesData.hasPrevPage || false);
+      setTotalActivities(activitiesData.total || 0);
+
+    } catch (err) {
+      console.error('Error fetching activities:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all activities for stats calculation (separate from paginated activities)
+  const fetchAllActivities = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Fetch all activities for stats
+      const activitiesResponse = await fetch('/api/creator/activities?page=1&limit=1000', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!activitiesResponse.ok) {
+        throw new Error('Failed to fetch activities');
+      }
+
+      const activitiesData = await activitiesResponse.json();
+      const activities = activitiesData.activities || [];
+      
+      // Calculate stats from all activities
+      const totalEarnings = activities
+        .filter((a: Activity) => a.type === 'payout' && a.status === 'completed')
+        .reduce((sum: number, a: Activity) => sum + a.amount, 0);
+      
+      const activeSubmissions = activities
+        .filter((a: Activity) => a.type === 'submission' && a.status === 'pending').length;
+      
+      const completedCampaigns = activities
+        .filter((a: Activity) => a.type === 'submission' && a.status === 'approved').length;
+      
+      const totalViews = activities
+        .filter((a: Activity) => a.type === 'submission' && a.views)
+        .reduce((sum: number, a: Activity) => sum + (a.views || 0), 0);
+      
+      const pendingPayouts = activities
+        .filter((a: Activity) => a.type === 'payout' && a.status === 'pending')
+        .reduce((sum: number, a: Activity) => sum + a.amount, 0);
+
+      setStats({
+        totalEarnings,
+        activeSubmissions,
+        completedCampaigns,
+        totalViews,
+        totalEngagement: 0, // TODO: Calculate from snapshots
+        pendingPayouts
+      });
+
+      // Fetch approved submissions for top performing content
+      const approvedSubmissions = activities
+        .filter((a: Activity) => {
+          const isSubmission = a.type === 'submission';
+          const isApproved = a.status === 'approved' || a.status === 'Approved' || a.status === 'APPROVED';
+          return isSubmission && isApproved;
+        })
+        .slice(0, 3); // Show top 3 approved submissions
+      
+      const mappedSubmissions = approvedSubmissions.map((submission: Activity) => {
+        console.log('Mapping submission:', {
+          id: submission.id,
+          title: submission.campaign_title,
+          post_url: submission.post_url,
+          views: submission.views
+        });
+        
+        // Try to detect platform from post_url, fallback to campaign data if needed
+        let platform = getPlatformFromUrl(submission.post_url || '');
+        
+        // If platform is still unknown and we have a post_url, try some additional parsing
+        if (platform === 'Unknown' && submission.post_url) {
+          const url = submission.post_url.toLowerCase();
+          if (url.includes('tiktok')) platform = 'TikTok';
+          else if (url.includes('instagram')) platform = 'Instagram';
+          else if (url.includes('youtube') || url.includes('youtu.be')) platform = 'YouTube';
+          else if (url.includes('twitter') || url.includes('x.com')) platform = 'Twitter/X';
+          else if (url.includes('facebook')) platform = 'Facebook';
+          else if (url.includes('linkedin')) platform = 'LinkedIn';
+          else if (url.includes('snapchat')) platform = 'Snapchat';
+        }
+        
+        return {
+          id: submission.id,
+          title: submission.campaign_title || 'Campaign Submission',
+          platform: platform,
+          views: submission.views || 0,
+          engagement: 0, // TODO: Calculate engagement from post_url API calls
+          earnings: 0, // TODO: Calculate earnings from campaign data
+          post_url: submission.post_url,
+          campaign_id: submission.id // TODO: Map to actual campaign_id
+        };
+      });
+
+      setTopPerformingContent(mappedSubmissions);
+
+    } catch (err) {
+      console.error('Error fetching all activities:', err);
+    }
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    if (user) {
+      fetchAllActivities();
+      fetchActivities();
+    }
   }, [user]);
 
-  const [topPerformingContent, setTopPerformingContent] = useState([
-    {
-      id: 1,
-      title: "Summer Fashion Haul",
-      platform: "TikTok",
-      views: 125000,
-      engagement: 8500,
-      earnings: 150
-    },
-    {
-      id: 2,
-      title: "Tech Review Video",
-      platform: "YouTube",
-      views: 45000,
-      engagement: 3200,
-      earnings: 200
-    },
-    {
-      id: 3,
-      title: "Lifestyle Post",
-      platform: "Instagram",
-      views: 28000,
-      engagement: 2100,
-      earnings: 120
+  // Fetch activities when page changes
+  useEffect(() => {
+    if (user) {
+      fetchActivities();
     }
-  ]);
+  }, [currentPage, user]);
+
+  const [topPerformingContent, setTopPerformingContent] = useState<{
+    id: string;
+    title: string;
+    platform: string;
+    views: number;
+    engagement: number;
+    earnings: number;
+    post_url?: string;
+    campaign_id: string;
+  }[]>([]);
 
   return (
     <div className="space-y-6">
@@ -187,9 +330,9 @@ export default function CreatorDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalEarnings.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {stats.totalEarnings === 0 ? 'Start earning to see progress' : '+12% from last month'}
             </p>
           </CardContent>
         </Card>
@@ -202,7 +345,7 @@ export default function CreatorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeSubmissions}</div>
             <p className="text-xs text-muted-foreground">
-              Pending review
+              {stats.activeSubmissions === 0 ? 'No pending submissions' : 'Pending review'}
             </p>
           </CardContent>
         </Card>
@@ -215,7 +358,7 @@ export default function CreatorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Across all platforms
+              {stats.totalViews === 0 ? 'No views yet' : 'Across all platforms'}
             </p>
           </CardContent>
         </Card>
@@ -228,7 +371,7 @@ export default function CreatorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedCampaigns}</div>
             <p className="text-xs text-muted-foreground">
-              Successfully delivered
+              {stats.completedCampaigns === 0 ? 'No completed campaigns yet' : 'Successfully delivered'}
             </p>
           </CardContent>
         </Card>
@@ -241,7 +384,7 @@ export default function CreatorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalEngagement.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Likes, comments, shares
+              {stats.totalEngagement === 0 ? 'No engagement yet' : 'Likes, comments, shares'}
             </p>
           </CardContent>
         </Card>
@@ -252,9 +395,9 @@ export default function CreatorDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.pendingPayouts}</div>
+            <div className="text-2xl font-bold">${stats.pendingPayouts.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting payment
+              {stats.pendingPayouts === 0 ? 'No pending payouts' : 'Awaiting payment'}
             </p>
           </CardContent>
         </Card>
@@ -283,8 +426,14 @@ export default function CreatorDashboard() {
             ) : recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No recent activity</p>
-                <p className="text-sm text-muted-foreground">Your submissions and payments will appear here</p>
+                <h3 className="text-lg font-semibold mb-2">No Recent Activity</h3>
+                <p className="text-muted-foreground mb-4">Your submissions and payments will appear here once you start participating in campaigns.</p>
+                <Link href="/creator/discover">
+                  <Button variant="outline">
+                    <Target className="h-4 w-4 mr-2" />
+                    Browse Campaigns
+                  </Button>
+                </Link>
               </div>
             ) : (
               recentActivity.map((activity) => {
@@ -296,7 +445,7 @@ export default function CreatorDashboard() {
                       case 'pending':
                         return <Clock className="w-4 h-4 text-yellow-500" />;
                       case 'rejected':
-                        return <XCircle className="w-4 h-4 text-red-500" />;
+                        return <XCircle className="w-4 h-4 text-red-100" />;
                       default:
                         return <MessageCircle className="w-4 h-4 text-blue-500" />;
                     }
@@ -307,7 +456,7 @@ export default function CreatorDashboard() {
                       case 'processing':
                         return <Clock className="w-4 h-4 text-yellow-500" />;
                       case 'failed':
-                        return <XCircle className="w-4 h-4 text-red-500" />;
+                        return <XCircle className="w-4 h-4 text-red-100" />;
                       default:
                         return <DollarSign className="w-4 h-4 text-blue-500" />;
                     }
@@ -358,31 +507,84 @@ export default function CreatorDashboard() {
                     <div className="flex items-center gap-3">
                       {getActivityIcon()}
                       <div>
-                        <p className="font-medium">{activity.campaign_title}</p>
+                        <p className="font-medium">{activity.campaign_title || 'Campaign Submission'}</p>
                         <p className="text-sm text-muted-foreground">
                           {getActivityText()}
                         </p>
-                        {activity.views && (
-                          <p className="text-xs text-muted-foreground">
-                            {activity.views.toLocaleString()} views
-                          </p>
-                        )}
                       </div>
                     </div>
                     <div className="text-right">
-                      {activity.amount > 0 && (
-                        <p className="font-bold">${activity.amount}</p>
-                      )}
                       <Badge variant={getStatusVariant()}>
-                        {activity.status}
+                        <div className="flex items-center gap-1">
+                          {activity.status === 'approved' && <CheckCircle className="w-3 h-3 text-green-500" />}
+                          {activity.status === 'rejected' && <XCircle className="w-3 h-3 text-red-100" />}
+                          {activity.status === 'pending' && <Clock className="w-3 h-3 text-yellow-500" />}
+                          {activity.status}
+                        </div>
                       </Badge>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(activity.date).toLocaleDateString()}
+                        {formatDate(activity.date)}
                       </p>
                     </div>
                   </div>
                 );
               })
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * 5) + 1} to {Math.min(currentPage * 5, totalActivities)} of {totalActivities} activities
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={!hasPrevPage}
+                  >
+                    Previous
+                  </Button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={!hasNextPage}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -396,28 +598,60 @@ export default function CreatorDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {topPerformingContent.map((content) => (
-              <div key={content.id} className="p-3 border rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">{content.title}</h4>
-                  <Badge variant="outline">{content.platform}</Badge>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" />
-                    <span>{content.views.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-3 w-3" />
-                    <span>{content.engagement.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    <span>${content.earnings}</span>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Loading content...</p>
               </div>
-            ))}
+            ) : topPerformingContent.length === 0 ? (
+              <div className="text-center py-8">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Approved Content Yet</h3>
+                <p className="text-muted-foreground mb-4">Your approved submissions will appear here once you complete campaigns.</p>
+                <Link href="/creator/discover">
+                  <Button variant="outline">
+                    <Target className="h-4 w-4 mr-2" />
+                    Browse Campaigns
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              topPerformingContent.map((content) => (
+                <div key={content.id} className="p-3 border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{content.title}</h4>
+                    <Badge variant="outline">{content.platform}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      <span>{content.views.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-3 w-3" />
+                      <span>{content.engagement.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3" />
+                      <span>${content.earnings}</span>
+                    </div>
+                  </div>
+                  {/* TODO: Add click handler to open post_url in new tab */}
+                  {content.post_url && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <a 
+                        href={content.post_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View Post →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

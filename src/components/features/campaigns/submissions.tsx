@@ -302,7 +302,7 @@ export function Submissions({
                     {submissions.filter(s => s.status === 'rejected').length}
                   </p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-600" />
+                <XCircle className="h-8 w-8 text-red-100" />
               </div>
             </CardContent>
           </Card>
@@ -364,7 +364,7 @@ export function Submissions({
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-sm truncate">{submission.creator_name || 'Unknown Creator'}</div>
-                        <div className="text-xs text-muted-foreground truncate">@{submission.creator_name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}</div>
+                        <div className="text-xs text-muted-foreground truncate">{submission.creator_username || `@${submission.creator_name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}`}</div>
                       </div>
                     </div>
 

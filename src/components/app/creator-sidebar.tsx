@@ -207,7 +207,7 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
 
   return (
     <div className={cn(
-      "flex h-screen flex-col bg-background border-r border-border transition-all duration-300",
+      "flex h-screen flex-col bg-sidebar border-r border-border transition-all duration-300",
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Header */}
@@ -235,21 +235,19 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
       {/* Joined Campaigns Section - Modern Redesign */}
       {userRole === "creator" && (
         <div className="flex-1 border-t border-border flex flex-col min-h-0">
-          {/* Header with Gradient Background */}
+          {/* Header */}
           <div className={cn(
             "relative py-3",
             isCollapsed ? "px-2" : "px-4"
           )}>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-t-lg"></div>
             <div className={cn(
               "relative flex items-center",
               isCollapsed ? "justify-center" : "justify-between"
             )}>
               {!isCollapsed && (
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
                   <h3 className="text-sm font-semibold text-foreground">
-                    Active Campaigns
+                    Joined Campaigns
                   </h3>
                 </div>
               )}
@@ -337,10 +335,7 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
                     <Link
                       key={campaign._id}
                       href={`/creator/campaigns/${campaign._id}?from=sidebar`}
-                      onClick={(e) => {
-                        // Prevent default navigation temporarily
-                        e.preventDefault();
-                        
+                      onClick={() => {
                         // Immediately collapse sidebar when clicking on a campaign
                         console.log('Campaign clicked - collapsing sidebar');
                         setIsCollapsed(true);
@@ -349,14 +344,6 @@ export default function CreatorSidebar({ userRole }: CreatorSidebarProps) {
                         window.dispatchEvent(new CustomEvent('sidebar-state-change', {
                           detail: { collapsed: true }
                         }));
-                        
-                        // Dispatch custom event for additional handling
-                        window.dispatchEvent(new CustomEvent('campaign-navigation'));
-                        
-                        // Navigate after a small delay to ensure events are processed
-                        setTimeout(() => {
-                          window.location.href = `/creator/campaigns/${campaign._id}?from=sidebar`;
-                        }, 50);
                       }}
                       className={cn(
                         "group block rounded-lg border transition-all duration-200 hover:shadow-sm",

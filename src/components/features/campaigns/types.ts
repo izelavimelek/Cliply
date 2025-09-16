@@ -33,8 +33,12 @@ export interface Campaign {
     call_to_action?: boolean;
     cta_type?: string;
     cta_text?: string;
-    hashtags?: string[];
+    hashtag_requirements?: boolean;
+    required_hashtags?: string;
+    min_hashtags?: number;
     hashtag_placement?: string;
+    hashtag_instructions?: string;
+    hashtags?: string[];
     additional_requirements?: string;
   };
   prohibited_content?: {
@@ -92,6 +96,33 @@ export interface Submission {
   creator_username?: string;
   creator_bio?: string | null;
   creator_website?: string | null;
+  creator_followers?: number;
+  connected_accounts?: {
+    tiktok?: Array<{
+      username: string;
+      display_name?: string;
+      follower_count?: number;
+      verified?: boolean;
+      connected_at: Date;
+      last_synced?: Date;
+    }>;
+    youtube?: Array<{
+      channel_id: string;
+      channel_name?: string;
+      subscriber_count?: number;
+      verified?: boolean;
+      connected_at: Date;
+      last_synced?: Date;
+    }>;
+    instagram?: Array<{
+      username: string;
+      display_name?: string;
+      follower_count?: number;
+      verified?: boolean;
+      connected_at: Date;
+      last_synced?: Date;
+    }>;
+  };
   post_url: string;
   media_urls?: string[];
   status: string;

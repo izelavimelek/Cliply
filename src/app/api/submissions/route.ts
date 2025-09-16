@@ -126,13 +126,35 @@ export async function GET(request: Request) {
       submissions.map(async (submission: any) => {
         try {
           const creatorProfile = await getProfile(submission.creator_id);
+          
+          // Get connected accounts for the creator
+          const { getConnectedAccounts } = await import("@/lib/db");
+          const connectedAccounts = await getConnectedAccounts(submission.creator_id);
+          
+          // Find the primary connected account username (prefer TikTok, then Instagram, then YouTube)
+          let primaryUsername = null;
+          if (connectedAccounts?.tiktok?.[0]?.username) {
+            primaryUsername = `@${connectedAccounts.tiktok[0].username}`;
+          } else if (connectedAccounts?.instagram?.[0]?.username) {
+            primaryUsername = `@${connectedAccounts.instagram[0].username}`;
+          } else if (connectedAccounts?.youtube?.[0]?.channel_name) {
+            primaryUsername = `@${connectedAccounts.youtube[0].channel_name}`;
+          }
+          
+          // Calculate total followers across all platforms
+          const totalFollowers = (connectedAccounts?.tiktok?.reduce((sum, acc) => sum + (acc.follower_count || 0), 0) || 0) +
+                                (connectedAccounts?.youtube?.reduce((sum, acc) => sum + (acc.subscriber_count || 0), 0) || 0) +
+                                (connectedAccounts?.instagram?.reduce((sum, acc) => sum + (acc.follower_count || 0), 0) || 0);
+          
           return {
             ...submission,
             id: submission._id?.toString() || submission.id,
             creator_name: creatorProfile?.display_name || `Creator ${submission.creator_id.slice(-4)}`,
-            creator_username: creatorProfile?.display_name ? `@${creatorProfile.display_name.toLowerCase().replace(/\s+/g, '')}` : `@creator${submission.creator_id.slice(-4)}`,
+            creator_username: primaryUsername || (creatorProfile?.display_name ? `@${creatorProfile.display_name.toLowerCase().replace(/\s+/g, '')}` : `@creator${submission.creator_id.slice(-4)}`),
             creator_bio: creatorProfile?.bio || null,
             creator_website: creatorProfile?.website || null,
+            creator_followers: totalFollowers || 1000, // Use actual follower count if available
+            connected_accounts: connectedAccounts,
           };
         } catch (error) {
           console.error('Error fetching creator profile for submission:', submission._id, error);
@@ -144,6 +166,8 @@ export async function GET(request: Request) {
             creator_username: `@creator${submission.creator_id.slice(-4)}`,
             creator_bio: null,
             creator_website: null,
+            creator_followers: 1000,
+            connected_accounts: null,
           };
         }
       })

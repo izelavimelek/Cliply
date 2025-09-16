@@ -39,6 +39,7 @@ import {
   Campaign,
   Submission
 } from "@/components/features/campaigns";
+import { CompletionPopup } from "@/components/ui/completion-popup";
 
 export default function CampaignDetailPage() {
   const params = useParams();
@@ -58,6 +59,11 @@ export default function CampaignDetailPage() {
   const [removingLogo, setRemovingLogo] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [completionPopup, setCompletionPopup] = useState<{
+    isOpen: boolean;
+    sectionName: string;
+  }>({ isOpen: false, sectionName: '' });
+  const [popupMuted, setPopupMuted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const campaignId = params.id as string;
@@ -270,6 +276,71 @@ export default function CampaignDetailPage() {
         setCampaign(updatedCampaign);
         setEditingSection(null);
         setSectionData(updatedCampaign);
+        
+        // Map subsection names to main section names for popup
+        const sectionMapping: Record<string, string> = {
+          // Campaign Overview subsections
+          'campaign-basics': 'campaign-overview',
+          'campaign-targeting': 'campaign-overview',
+          
+          // Budget & Timeline subsections
+          'budget-config': 'budget-timeline',
+          'timeline-config': 'budget-timeline',
+          
+          // Content Requirements subsections
+          'deliverables': 'content-requirements',
+          'required-elements': 'content-requirements',
+          'prohibited-content': 'content-requirements',
+          'tone-style': 'content-requirements',
+          'music-audio': 'content-requirements',
+          'example-references': 'content-requirements',
+          'general-requirements': 'content-requirements',
+          
+          // Audience Targeting subsections
+          'geography': 'audience-targeting',
+          'languages': 'audience-targeting',
+          'age-range': 'audience-targeting',
+          'gender': 'audience-targeting',
+          'interests': 'audience-targeting',
+          
+          // Agreements & Compliance subsections
+          'usage-rights': 'agreements-compliance',
+          'exclusivity': 'agreements-compliance',
+          'legal-confirmations': 'agreements-compliance',
+          
+          // Assets subsections
+          'assets': 'assets'
+        };
+        
+        const mainSectionName = sectionMapping[sectionName] || sectionName;
+        
+        // Check if the section is actually completed before showing popup
+        const isSectionCompleted = (() => {
+          switch (mainSectionName) {
+            case 'campaign-overview':
+              return overviewValidation.isCompleted;
+            case 'budget-timeline':
+              return budgetValidation.isCompleted;
+            case 'content-requirements':
+              return contentValidation.isCompleted;
+            case 'audience-targeting':
+              return audienceValidation.isCompleted;
+            case 'agreements-compliance':
+              return true; // Always show for agreements
+            case 'assets':
+              return true; // Always show for assets
+            default:
+              return false;
+          }
+        })();
+        
+        // Show completion popup only if section is actually completed and not muted
+        if (!popupMuted && isSectionCompleted) {
+          setCompletionPopup({
+            isOpen: true,
+            sectionName: mainSectionName
+          });
+        }
       } else {
         throw new Error('Failed to save section');
       }
@@ -289,6 +360,30 @@ export default function CampaignDetailPage() {
   const cancelEditing = () => {
     setEditingSection(null);
     setSectionData(campaign || {});
+  };
+
+  const closeCompletionPopup = () => {
+    setCompletionPopup({ isOpen: false, sectionName: '' });
+  };
+
+  const goToNextSection = () => {
+    const nextSectionMap: Record<string, string> = {
+      'campaign-overview': 'budget-timeline',
+      'budget-timeline': 'content-requirements',
+      'content-requirements': 'audience-targeting',
+      'audience-targeting': 'agreements-compliance',
+      'agreements-compliance': 'assets'
+    };
+    
+    const nextSection = nextSectionMap[completionPopup.sectionName];
+    if (nextSection) {
+      setActiveSection(nextSection);
+    }
+  };
+
+  const mutePopup = () => {
+    setPopupMuted(true);
+    setCompletionPopup({ isOpen: false, sectionName: '' });
   };
 
   const getStatusColor = (status: string) => {
@@ -911,6 +1006,16 @@ export default function CampaignDetailPage() {
 
         {/* End of main content sections */}
       </div>
+
+      {/* Completion Popup */}
+      <CompletionPopup
+        isOpen={completionPopup.isOpen}
+        onClose={closeCompletionPopup}
+        sectionName={completionPopup.sectionName}
+        nextSection={completionPopup.sectionName === 'assets' ? undefined : 'next'}
+        onNextSection={goToNextSection}
+        onMute={mutePopup}
+      />
     </div>
   );
 }

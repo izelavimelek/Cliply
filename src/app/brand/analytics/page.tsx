@@ -63,6 +63,8 @@ interface SubmissionAnalytics {
   earnings?: number;
   created_at: string;
   verified_at?: string;
+  creator_name?: string;
+  creator_username?: string;
 }
 
 export default function BrandAnalyticsPage() {
@@ -699,7 +701,7 @@ export default function BrandAnalyticsPage() {
                             <Users className="h-5 w-5 text-muted-foreground" />
                           </div>
                           <div>
-                            <p className="font-medium">Creator Submission</p>
+                            <p className="font-medium">{submission.creator_name || 'Creator Submission'}</p>
                             <p className="text-sm text-muted-foreground">
                               {new Date(submission.created_at).toLocaleDateString()}
                             </p>

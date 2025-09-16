@@ -7,6 +7,34 @@ export interface BaseDocument {
   updated_at: Date;
 }
 
+// Connected account interfaces
+export interface TikTokAccount {
+  username: string;
+  display_name?: string;
+  follower_count?: number;
+  verified?: boolean;
+  connected_at: Date;
+  last_synced?: Date;
+}
+
+export interface YouTubeAccount {
+  channel_id: string;
+  channel_name?: string;
+  subscriber_count?: number;
+  verified?: boolean;
+  connected_at: Date;
+  last_synced?: Date;
+}
+
+export interface InstagramAccount {
+  username: string;
+  display_name?: string;
+  follower_count?: number;
+  verified?: boolean;
+  connected_at: Date;
+  last_synced?: Date;
+}
+
 // Profile schema
 export interface Profile extends BaseDocument {
   user_id: string;
@@ -23,6 +51,11 @@ export interface Profile extends BaseDocument {
     instagram?: string;
     youtube?: string;
     tiktok?: string;
+  };
+  connected_accounts?: {
+    tiktok?: TikTokAccount[];
+    youtube?: YouTubeAccount[];
+    instagram?: InstagramAccount[];
   };
 }
 
@@ -68,8 +101,12 @@ export interface Campaign extends BaseDocument {
     call_to_action?: boolean;
     cta_type?: string;
     cta_text?: string;
-    hashtags?: string[];
+    hashtag_requirements?: boolean;
+    required_hashtags?: string;
+    min_hashtags?: number;
     hashtag_placement?: string;
+    hashtag_instructions?: string;
+    hashtags?: string[];
     additional_requirements?: string;
   };
   prohibited_content?: {

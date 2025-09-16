@@ -28,7 +28,7 @@ export function AgreementsCompliance({
 }: AgreementsComplianceProps) {
 
   // Get agreements compliance progress from centralized validation
-  const complianceProgress = getAgreementsComplianceProgress(sectionData);
+  const complianceProgress = getAgreementsComplianceProgress(campaign);
 
   return (
     <div className="space-y-6">

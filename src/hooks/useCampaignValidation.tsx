@@ -58,8 +58,8 @@ export function useCampaignValidation(campaign: CampaignData | null): CampaignVa
     // Active state takes priority - make it very prominent
     if (isActive) {
       if (isCompleted) {
-        // Active + Completed: Strong green background with darker text
-        return 'bg-green-200 dark:bg-green-800/50 text-green-900 dark:text-green-100 border-green-400 dark:border-green-600 shadow-md';
+        // Active + Completed: Normal primary background
+        return 'bg-primary/20 dark:bg-primary/30 text-primary-foreground dark:text-primary-100 border-primary/40 dark:border-primary/500 shadow-md';
       } else {
         // Active + Not Completed: Strong blue/primary background
         return 'bg-primary/20 dark:bg-primary/30 text-primary-foreground dark:text-primary-100 border-primary/40 dark:border-primary/500 shadow-md';
@@ -68,8 +68,8 @@ export function useCampaignValidation(campaign: CampaignData | null): CampaignVa
     
     // Not active states
     if (isCompleted) {
-      // Completed but not active: Subtle green
-      return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30';
+      // Completed but not active: Normal background
+      return 'bg-muted/50 dark:bg-muted/30 text-muted-foreground dark:text-muted-foreground border-transparent hover:bg-muted dark:hover:bg-muted/50 hover:border-border';
     }
     
     // Not completed and not active: Default with hover

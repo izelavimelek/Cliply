@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
+import { ConnectedAccounts } from "@/components/features/connected-accounts";
 import { 
   User, 
   Mail, 
@@ -22,7 +23,8 @@ import {
   Save,
   Settings,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Link
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -51,6 +53,12 @@ export default function SettingsPage() {
     twitter: "https://twitter.com/johncreator"
   });
 
+  const [connectedAccounts, setConnectedAccounts] = useState({
+    tiktok: [],
+    youtube: [],
+    instagram: []
+  });
+
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     campaignUpdates: true,
@@ -65,6 +73,37 @@ export default function SettingsPage() {
     allowMessages: true,
     dataSharing: false
   });
+
+  // Fetch connected accounts on component mount
+  useEffect(() => {
+    const fetchConnectedAccounts = async () => {
+      if (!user) return;
+      
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        const response = await fetch('/api/connected-accounts', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setConnectedAccounts(data.connected_accounts || {
+            tiktok: [],
+            youtube: [],
+            instagram: []
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching connected accounts:', error);
+      }
+    };
+
+    fetchConnectedAccounts();
+  }, [user]);
 
   // Save functions
   const saveProfile = async () => {
@@ -130,14 +169,11 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Account Settings</h1>
-          <div className="text-muted-foreground mt-1">
-            <span>Manage your account preferences and profile</span>
-          </div>
+          <h1 className="text-3xl font-bold">Settings</h1>
         </div>
       </div>
 
@@ -170,14 +206,14 @@ export default function SettingsPage() {
             Profile
           </button>
           <button
-            onClick={() => setActiveTab('social')}
+            onClick={() => setActiveTab('connected-accounts')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'social'
+              activeTab === 'connected-accounts'
                 ? 'text-foreground border-primary'
                 : 'text-muted-foreground border-transparent hover:text-foreground'
             }`}
           >
-            Social Links
+            Connected Accounts
           </button>
           <button
             onClick={() => setActiveTab('notifications')}
@@ -304,63 +340,13 @@ export default function SettingsPage() {
         </div>
         )}
 
-        {/* Social Links Tab */}
-        {activeTab === 'social' && (
+        {/* Connected Accounts Tab */}
+        {activeTab === 'connected-accounts' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Social Media Links
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="youtube">YouTube</Label>
-                <Input 
-                  id="youtube" 
-                  value={socialLinks.youtube} 
-                  onChange={(e) => setSocialLinks(prev => ({ ...prev, youtube: e.target.value }))}
-                  placeholder="https://youtube.com/@yourchannel" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tiktok">TikTok</Label>
-                <Input 
-                  id="tiktok" 
-                  value={socialLinks.tiktok} 
-                  onChange={(e) => setSocialLinks(prev => ({ ...prev, tiktok: e.target.value }))}
-                  placeholder="https://tiktok.com/@yourusername" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram</Label>
-                <Input 
-                  id="instagram" 
-                  value={socialLinks.instagram} 
-                  onChange={(e) => setSocialLinks(prev => ({ ...prev, instagram: e.target.value }))}
-                  placeholder="https://instagram.com/yourusername" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="twitter">Twitter/X</Label>
-                <Input 
-                  id="twitter" 
-                  value={socialLinks.twitter} 
-                  onChange={(e) => setSocialLinks(prev => ({ ...prev, twitter: e.target.value }))}
-                  placeholder="https://twitter.com/yourusername" 
-                />
-              </div>
-              <Button 
-                className="flex items-center gap-2" 
-                onClick={saveSocialLinks}
-                disabled={loading}
-              >
-                <Save className="h-4 w-4" />
-                {loading ? 'Saving...' : 'Save Social Links'}
-              </Button>
-            </CardContent>
-          </Card>
+          <ConnectedAccounts 
+            userId={user?.id || ''} 
+            initialAccounts={connectedAccounts}
+          />
         </div>
         )}
 

@@ -126,12 +126,12 @@ export function BrandCampaignCard({
           {/* Content Section - Compact Layout */}
           <div className="flex-1 min-w-0">
             {/* Header Row - Title, Description, and Status */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 min-w-0 pr-3">
                 <h3 className="font-semibold text-base text-foreground truncate">
                   {title}
                 </h3>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                   {description}
                 </p>
               </div>

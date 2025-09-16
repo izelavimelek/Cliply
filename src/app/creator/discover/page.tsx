@@ -206,13 +206,8 @@ export default function DiscoverPage() {
       detail: { collapsed: true }
     }));
     
-    // Also dispatch campaign navigation event for additional handling
-    window.dispatchEvent(new CustomEvent('campaign-navigation'));
-    
-    // Add a small delay to ensure events are processed before navigation
-    setTimeout(() => {
-      router.push(`/creator/campaigns/${campaignId}`);
-    }, 100);
+    // Navigate immediately using Next.js router
+    router.push(`/creator/campaigns/${campaignId}`);
   };
 
   return (

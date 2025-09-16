@@ -228,7 +228,7 @@ export default function BrandSidebar({ userRole }: BrandSidebarProps) {
   return (
     <>
     <div className={cn(
-      "flex h-screen flex-col bg-background border-r border-border transition-all duration-300",
+      "flex h-screen flex-col bg-sidebar border-r border-border transition-all duration-300",
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Header */}

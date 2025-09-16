@@ -51,8 +51,8 @@ export function LogoutButton({
       // Sign out user
       signOut();
       
-      // Navigate to auth page
-      router.push("/auth");
+      // Navigate to home page
+      router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }

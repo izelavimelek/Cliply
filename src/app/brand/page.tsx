@@ -161,32 +161,6 @@ export default function BrandDashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Budget</h3>
-              <p className="mt-2 text-3xl font-semibold">${campaigns.filter(c => c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0).toLocaleString()}</p>
-              <p className="mt-1 text-sm text-gray-500">Across {campaigns.filter(c => c.status !== 'deleted').length} campaigns</p>
-            </div>
-            <DollarSign className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Budget Spent</h3>
-              <p className="mt-2 text-3xl font-semibold">${campaigns.filter(c => c.status !== 'deleted').reduce((acc, c) => acc + (c.budget_spent || 0), 0).toLocaleString()}</p>
-              <p className="mt-1 text-sm text-gray-500">
-                {campaigns.filter(c => c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0) > 0 
-                  ? Math.round(campaigns.filter(c => c.status !== 'deleted').reduce((acc, c) => acc + (c.budget_spent || 0), 0) / campaigns.filter(c => c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0) * 100)
-                  : 0}% of total
-              </p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-muted-foreground" />
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Campaigns</h3>
               <p className="mt-2 text-3xl font-semibold">{campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').length}</p>
               <p className="mt-1 text-sm text-gray-500">Currently running</p>
@@ -198,9 +172,37 @@ export default function BrandDashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Budget</h3>
+              <p className="mt-2 text-3xl font-semibold">${campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0).toLocaleString()}</p>
+              <p className="mt-1 text-sm text-gray-500">Across {campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').length} active {campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').length === 1 ? 'campaign' : 'campaigns'}</p>
+            </div>
+            <DollarSign className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Budget Spent</h3>
+              <p className="mt-2 text-3xl font-semibold">${campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').reduce((acc, c) => acc + (c.budget_spent || 0), 0).toLocaleString()}</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0) > 0 
+                  ? Math.round(campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').reduce((acc, c) => acc + (c.budget_spent || 0), 0) / campaigns.filter(c => c.status === 'active' && c.status !== 'deleted').reduce((acc, c) => acc + (c.total_budget || 0), 0) * 100)
+                  : 0}% of active budget
+              </p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-muted-foreground" />
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Submissions</h3>
               <p className="mt-2 text-3xl font-semibold">{submissions.length}</p>
-              <p className="mt-1 text-sm text-gray-500">{submissions.filter(s => s.status === 'pending').length} pending</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {submissions.filter(s => s.status === 'pending').length} pending • {submissions.filter(s => s.status === 'approved').length} approved • {submissions.filter(s => s.status === 'rejected').length} rejected
+              </p>
             </div>
             <Users className="h-8 w-8 text-muted-foreground" />
           </div>

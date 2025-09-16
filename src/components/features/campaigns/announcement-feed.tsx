@@ -234,15 +234,15 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'URGENT':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800';
       case 'HIGH':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800';
       case 'MEDIUM':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800';
       case 'LOW':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700';
       default:
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800';
     }
   };
 
@@ -393,7 +393,7 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
                 </div>
 
                 {/* Announcement Card */}
-                <Card className={`flex-1 p-4 pl-6 pr-6 hover:shadow-md transition-shadow ${announcement.is_pinned ? 'ring-2 ring-blue-200 bg-blue-50/50' : ''}`}>
+                <Card className={`flex-1 p-4 pl-6 pr-6 hover:shadow-md transition-shadow ${announcement.is_pinned ? 'ring-2 ring-pink-300 dark:ring-pink-600 bg-gradient-to-r from-pink-100/80 via-purple-100/80 to-indigo-100/80 dark:from-pink-900/40 dark:via-purple-900/40 dark:to-indigo-900/40' : ''}`}>
                   <div className="flex items-start gap-3">
                     {/* Avatar/Icon */}
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -405,16 +405,13 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
                       {/* Header */}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-sm">{announcement.brand_name || 'Campaign Team'}</span>
-                        {announcement.is_pinned && (
-                          <>
-                            <span className="text-muted-foreground text-sm">·</span>
-                            <Pin className="h-3 w-3 text-blue-500" />
-                          </>
-                        )}
                         <div className="flex items-center gap-1">
                           <Badge className={`${getPriorityColor(announcement.priority)} text-xs`}>
                             {announcement.priority}
                           </Badge>
+                          {announcement.is_pinned && (
+                            <Pin className="h-4 w-4 text-pink-600 dark:text-pink-300" />
+                          )}
                         </div>
                       </div>
 
@@ -424,7 +421,7 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
                     )}
                     
                     {/* Content */}
-                    <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                    <div className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
                       {displayContent}
                     </div>
 
@@ -481,7 +478,7 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteAnnouncement(announcement)}
-                        className="h-8 px-2 text-red-600 hover:text-red-700"
+                        className="h-8 px-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

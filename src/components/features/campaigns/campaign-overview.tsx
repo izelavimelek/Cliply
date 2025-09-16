@@ -36,7 +36,7 @@ export function CampaignOverview({
 }: CampaignOverviewProps) {
 
   // Get campaign overview progress from centralized validation
-  const overviewProgress = getCampaignOverviewProgress(sectionData);
+  const overviewProgress = getCampaignOverviewProgress(campaign);
 
   return (
     <div className="space-y-6">
@@ -132,12 +132,8 @@ export function CampaignOverview({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="title" className="text-sm font-bold text-foreground">
-                        Campaign Title
+                        Campaign Title<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Input
                       id="title"
@@ -163,12 +159,8 @@ export function CampaignOverview({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="description" className="text-sm font-bold text-foreground">
-                        Campaign Description
+                        Campaign Description<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Textarea
                       id="description"
@@ -228,11 +220,7 @@ export function CampaignOverview({
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Campaign Title</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Campaign Title<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.title || <span className="text-muted-foreground italic">Click edit to set title</span>}
@@ -240,11 +228,7 @@ export function CampaignOverview({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Description</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Description<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground leading-relaxed">
                         {campaign?.description || <span className="text-muted-foreground italic">Click edit to set description</span>}
@@ -289,12 +273,8 @@ export function CampaignOverview({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="objective" className="text-sm font-bold text-foreground">
-                        Campaign Objective
+                        Campaign Objective<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Select 
                       value={sectionData.objective || ''} 
@@ -324,12 +304,8 @@ export function CampaignOverview({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label className="text-sm font-bold text-foreground">
-                        Target Platforms
+                        Target Platforms<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
@@ -382,12 +358,8 @@ export function CampaignOverview({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="category" className="text-sm font-bold text-foreground">
-                        Campaign Category
+                        Campaign Category<span className="text-red-600 dark:text-red-400 ml-1">*</span>
                       </Label>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                      </div>
                     </div>
                     <Select 
                       value={sectionData.category || ''} 
@@ -457,11 +429,7 @@ export function CampaignOverview({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Objective</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Objective<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.objective ? (
@@ -475,11 +443,7 @@ export function CampaignOverview({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Platforms</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Platforms<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {campaign?.platforms?.length ? (
@@ -495,11 +459,7 @@ export function CampaignOverview({
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Category</h4>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                          <span className="text-xs text-red-600 dark:text-red-400 font-medium">Required</span>
-                        </div>
+                        <h4 className="font-medium text-base">Category<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
                       <p className="text-foreground">
                         {campaign?.category ? (

@@ -599,3 +599,414 @@ export async function deleteAnnouncement(id: string): Promise<boolean> {
     return false;
   }
 }
+
+// ===== CONNECTED ACCOUNTS FUNCTIONS =====
+
+export async function getConnectedAccounts(userId: string): Promise<Profile['connected_accounts']> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    const profile = await profilesCollection.findOne(
+      { user_id: userId },
+      { projection: { connected_accounts: 1 } }
+    );
+
+    return profile?.connected_accounts || {
+      tiktok: [],
+      youtube: [],
+      instagram: []
+    };
+  } catch (error) {
+    console.error('Error getting connected accounts:', error);
+    return {
+      tiktok: [],
+      youtube: [],
+      instagram: []
+    };
+  }
+}
+
+export async function addConnectedAccount(
+  userId: string, 
+  platform: 'tiktok' | 'youtube' | 'instagram', 
+  accountData: any
+): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    // Add timestamps
+    const accountWithTimestamps = {
+      ...accountData,
+      connected_at: new Date(),
+      last_synced: new Date()
+    };
+
+    const result = await profilesCollection.updateOne(
+      { user_id: userId },
+      {
+        $push: {
+          [`connected_accounts.${platform}`]: accountWithTimestamps
+        },
+        $set: {
+          updated_at: new Date()
+        }
+      }
+    );
+
+    return result.matchedCount > 0;
+  } catch (error) {
+    console.error('Error adding connected account:', error);
+    return false;
+  }
+}
+
+export async function removeConnectedAccount(
+  userId: string, 
+  platform: 'tiktok' | 'youtube' | 'instagram', 
+  accountIndex: number
+): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    // Get current accounts to validate index
+    const profile = await profilesCollection.findOne(
+      { user_id: userId },
+      { projection: { connected_accounts: 1 } }
+    );
+
+    if (!profile?.connected_accounts?.[platform]) {
+      return false;
+    }
+
+    const platformAccounts = profile.connected_accounts[platform];
+    if (accountIndex < 0 || accountIndex >= platformAccounts.length) {
+      return false;
+    }
+
+    // Remove account at specified index
+    const updatedAccounts = platformAccounts.filter((_: any, index: number) => index !== accountIndex);
+
+    const result = await profilesCollection.updateOne(
+      { user_id: userId },
+      {
+        $set: {
+          [`connected_accounts.${platform}`]: updatedAccounts,
+          updated_at: new Date()
+        }
+      }
+    );
+
+    return result.matchedCount > 0;
+  } catch (error) {
+    console.error('Error removing connected account:', error);
+    return false;
+  }
+}
+
+export async function updateConnectedAccount(
+  userId: string, 
+  platform: 'tiktok' | 'youtube' | 'instagram', 
+  accountIndex: number, 
+  accountData: any
+): Promise<boolean> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    // Get current accounts to validate index
+    const profile = await profilesCollection.findOne(
+      { user_id: userId },
+      { projection: { connected_accounts: 1 } }
+    );
+
+    if (!profile?.connected_accounts?.[platform]) {
+      return false;
+    }
+
+    const platformAccounts = profile.connected_accounts[platform];
+    if (accountIndex < 0 || accountIndex >= platformAccounts.length) {
+      return false;
+    }
+
+    // Update account with new data and sync timestamp
+    const updatedAccount = {
+      ...accountData,
+      connected_at: platformAccounts[accountIndex].connected_at, // Preserve original connection date
+      last_synced: new Date()
+    };
+
+    // Update specific account in array
+    const updatedAccounts = [...platformAccounts];
+    updatedAccounts[accountIndex] = updatedAccount;
+
+    const result = await profilesCollection.updateOne(
+      { user_id: userId },
+      {
+        $set: {
+          [`connected_accounts.${platform}`]: updatedAccounts,
+          updated_at: new Date()
+        }
+      }
+    );
+
+    return result.matchedCount > 0;
+  } catch (error) {
+    console.error('Error updating connected account:', error);
+    return false;
+  }
+}
+
+export async function syncAccountData(
+  userId: string, 
+  platform: 'tiktok' | 'youtube' | 'instagram', 
+  accountIndex: number
+): Promise<any | null> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    // Get current account data
+    const profile = await profilesCollection.findOne(
+      { user_id: userId },
+      { projection: { connected_accounts: 1 } }
+    );
+
+    if (!profile?.connected_accounts?.[platform]) {
+      return null;
+    }
+
+    const platformAccounts = profile.connected_accounts[platform];
+    if (accountIndex < 0 || accountIndex >= platformAccounts.length) {
+      return null;
+    }
+
+    const account = platformAccounts[accountIndex];
+
+    // Sync data based on platform (this would call external APIs)
+    let syncedData;
+    switch (platform) {
+      case 'tiktok':
+        syncedData = await syncTikTokAccountData(account);
+        break;
+      case 'youtube':
+        syncedData = await syncYouTubeAccountData(account);
+        break;
+      case 'instagram':
+        syncedData = await syncInstagramAccountData(account);
+        break;
+      default:
+        return null;
+    }
+
+    if (!syncedData) {
+      return null;
+    }
+
+    // Update account with synced data
+    const updatedAccount = {
+      ...syncedData,
+      connected_at: account.connected_at, // Preserve original connection date
+      last_synced: new Date()
+    };
+
+    // Update specific account in array
+    const updatedAccounts = [...platformAccounts];
+    updatedAccounts[accountIndex] = updatedAccount;
+
+    await profilesCollection.updateOne(
+      { user_id: userId },
+      {
+        $set: {
+          [`connected_accounts.${platform}`]: updatedAccounts,
+          updated_at: new Date()
+        }
+      }
+    );
+
+    return updatedAccount;
+  } catch (error) {
+    console.error('Error syncing account data:', error);
+    return null;
+  }
+}
+
+export async function syncAllAccounts(userId: string): Promise<{
+  tiktok: { synced: number; failed: number };
+  youtube: { synced: number; failed: number };
+  instagram: { synced: number; failed: number };
+}> {
+  try {
+    const db = await getDatabase();
+    const profilesCollection = db.collection(Collections.PROFILES);
+
+    // Get current profile
+    const profile = await profilesCollection.findOne(
+      { user_id: userId },
+      { projection: { connected_accounts: 1 } }
+    );
+
+    if (!profile?.connected_accounts) {
+      return {
+        tiktok: { synced: 0, failed: 0 },
+        youtube: { synced: 0, failed: 0 },
+        instagram: { synced: 0, failed: 0 }
+      };
+    }
+
+    const connectedAccounts = profile.connected_accounts;
+    const syncResults = {
+      tiktok: { synced: 0, failed: 0 },
+      youtube: { synced: 0, failed: 0 },
+      instagram: { synced: 0, failed: 0 }
+    };
+
+    // Sync all platforms
+    for (const platform of ['tiktok', 'youtube', 'instagram'] as const) {
+      const accounts = connectedAccounts[platform] || [];
+      
+      for (let i = 0; i < accounts.length; i++) {
+        try {
+          let syncedData;
+          
+          switch (platform) {
+            case 'tiktok':
+              syncedData = await syncTikTokAccountData(accounts[i]);
+              break;
+            case 'youtube':
+              syncedData = await syncYouTubeAccountData(accounts[i]);
+              break;
+            case 'instagram':
+              syncedData = await syncInstagramAccountData(accounts[i]);
+              break;
+          }
+
+          if (syncedData) {
+            accounts[i] = {
+              ...syncedData,
+              connected_at: accounts[i].connected_at,
+              last_synced: new Date()
+            };
+            syncResults[platform].synced++;
+          } else {
+            syncResults[platform].failed++;
+          }
+        } catch (error) {
+          console.error(`Sync error for ${platform} account ${i}:`, error);
+          syncResults[platform].failed++;
+        }
+      }
+    }
+
+    // Update database with synced accounts
+    await profilesCollection.updateOne(
+      { user_id: userId },
+      {
+        $set: {
+          connected_accounts: connectedAccounts,
+          updated_at: new Date()
+        }
+      }
+    );
+
+    return syncResults;
+  } catch (error) {
+    console.error('Error syncing all accounts:', error);
+    return {
+      tiktok: { synced: 0, failed: 0 },
+      youtube: { synced: 0, failed: 0 },
+      instagram: { synced: 0, failed: 0 }
+    };
+  }
+}
+
+// Helper functions for platform-specific data syncing
+async function syncTikTokAccountData(account: any): Promise<any | null> {
+  try {
+    // Check if we have a valid access token
+    if (!account.access_token) {
+      console.warn('No access token available for TikTok sync');
+      return null;
+    }
+
+    // Check if token is expired
+    if (account.expires_in && account.last_synced) {
+      const tokenAge = Date.now() - new Date(account.last_synced).getTime();
+      const tokenExpiry = account.expires_in * 1000; // Convert to milliseconds
+      
+      if (tokenAge > tokenExpiry) {
+        console.warn('TikTok access token expired, need to refresh');
+        // TODO: Implement token refresh
+        return null;
+      }
+    }
+
+    // Fetch updated user data from TikTok API
+    const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${account.access_token}`,
+      },
+    });
+
+    if (!userResponse.ok) {
+      console.error('TikTok API error:', userResponse.status, await userResponse.text());
+      return null;
+    }
+
+    const userData = await userResponse.json();
+    const { data } = userData;
+
+    if (!data || !data.user) {
+      console.error('Invalid TikTok user data received');
+      return null;
+    }
+
+    const user = data.user;
+
+    // Return updated account data
+    return {
+      ...account,
+      username: user.display_name || account.username,
+      display_name: user.display_name || account.display_name,
+      follower_count: user.follower_count || account.follower_count,
+      verified: account.verified, // Keep existing verification status
+      last_synced: new Date()
+    };
+  } catch (error) {
+    console.error('TikTok sync error:', error);
+    return null;
+  }
+}
+
+async function syncYouTubeAccountData(account: any): Promise<any | null> {
+  try {
+    // TODO: Implement actual YouTube API sync
+    // For now, return mock updated data
+    return {
+      ...account,
+      subscriber_count: account.subscriber_count + Math.floor(Math.random() * 50),
+      verified: account.verified
+    };
+  } catch (error) {
+    console.error('YouTube sync error:', error);
+    return null;
+  }
+}
+
+async function syncInstagramAccountData(account: any): Promise<any | null> {
+  try {
+    // TODO: Implement actual Instagram API sync
+    // For now, return mock updated data
+    return {
+      ...account,
+      follower_count: account.follower_count + Math.floor(Math.random() * 200),
+      verified: account.verified
+    };
+  } catch (error) {
+    console.error('Instagram sync error:', error);
+    return null;
+  }
+}

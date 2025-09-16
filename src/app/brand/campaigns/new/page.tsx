@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ArrowLeft, Save, CheckCircle, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useCampaignValidation } from "@/hooks/useCampaignValidation";
+import { FaYoutube, FaTiktok, FaInstagram, FaLinkedin } from "react-icons/fa";
 
 // This ensures the page takes up the full viewport
 export const dynamic = 'force-dynamic';
@@ -243,7 +244,7 @@ export default function NewCampaignPage() {
               {[
                 {
                   id: "youtube",
-                  icon: "🎥",
+                  icon: <FaYoutube className="w-8 h-8 text-red-600" />,
                   title: "YouTube",
                   description: "Video content and tutorials",
                   color: "from-red-50 to-red-100 dark:from-red-950 dark:to-red-900",
@@ -251,7 +252,7 @@ export default function NewCampaignPage() {
                 },
                 {
                   id: "tiktok",
-                  icon: "🎵",
+                  icon: <FaTiktok className="w-8 h-8 text-black dark:text-white" />,
                   title: "TikTok",
                   description: "Short-form viral content",
                   color: "from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900",
@@ -259,7 +260,7 @@ export default function NewCampaignPage() {
                 },
                 {
                   id: "instagram",
-                  icon: "📸",
+                  icon: <FaInstagram className="w-8 h-8 text-pink-600" />,
                   title: "Instagram",
                   description: "Visual storytelling and photos",
                   color: "from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900",
@@ -267,7 +268,7 @@ export default function NewCampaignPage() {
                 },
                 {
                   id: "linkedin",
-                  icon: "💼",
+                  icon: <FaLinkedin className="w-8 h-8 text-blue-600" />,
                   title: "LinkedIn",
                   description: "Professional networking content",
                   color: "from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900",
@@ -286,7 +287,7 @@ export default function NewCampaignPage() {
                     onClick={() => togglePlatform(platform.id as "youtube" | "tiktok" | "instagram" | "linkedin")}
                   >
                     <CardContent className="p-3 text-center">
-                      <div className="text-2xl mb-2">{platform.icon}</div>
+                      <div className="flex justify-center mb-2">{platform.icon}</div>
                       <h3 className="text-sm font-semibold mb-1 text-card-foreground">{platform.title}</h3>
                       <p className="text-xs text-muted-foreground">{platform.description}</p>
                       {isSelected && (

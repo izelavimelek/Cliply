@@ -3,97 +3,41 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   DollarSign, 
   TrendingUp, 
   CreditCard, 
-  Download, 
   Calendar,
-  CheckCircle,
   Clock,
-  AlertCircle,
   Plus,
-  ArrowUpRight,
-  ArrowDownLeft
+  Wallet,
+  Receipt,
+  BarChart3
 } from "lucide-react";
 
 export default function WalletPage() {
-  const [walletStats, setWalletStats] = useState({
-    totalBalance: 1250.50,
-    pendingBalance: 450.00,
-    totalEarned: 3200.75,
-    thisMonth: 650.25
-  });
+  const [activeTab, setActiveTab] = useState('transactions');
+  
+  // Empty state - no mock data
+  const walletStats = {
+    totalBalance: 0.00,
+    pendingBalance: 0.00,
+    totalEarned: 0.00,
+    thisMonth: 0.00
+  };
 
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: "earning",
-      amount: 150.00,
-      description: "Summer Fashion Campaign",
-      date: "2024-01-15",
-      status: "completed",
-      platform: "TikTok"
-    },
-    {
-      id: 2,
-      type: "earning",
-      amount: 200.00,
-      description: "Tech Product Launch",
-      date: "2024-01-12",
-      status: "completed",
-      platform: "YouTube"
-    },
-    {
-      id: 3,
-      type: "earning",
-      amount: 300.00,
-      description: "Holiday Campaign",
-      date: "2024-01-10",
-      status: "pending",
-      platform: "Instagram"
-    },
-    {
-      id: 4,
-      type: "payout",
-      amount: -500.00,
-      description: "Bank Transfer",
-      date: "2024-01-08",
-      status: "completed",
-      platform: "Bank"
-    },
-    {
-      id: 5,
-      type: "earning",
-      amount: 120.00,
-      description: "Lifestyle Post",
-      date: "2024-01-05",
-      status: "completed",
-      platform: "Instagram"
-    }
-  ]);
-
-  const [payoutMethods, setPayoutMethods] = useState([
-    {
-      id: 1,
-      type: "bank",
-      name: "Chase Bank",
-      account: "****1234",
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: "paypal",
-      name: "PayPal",
-      account: "john@example.com",
-      isDefault: false
-    }
-  ]);
+  const transactions: any[] = [];
+  const payoutMethods: any[] = [];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Wallet</h1>
+        </div>
+      </div>
+
       {/* Wallet Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -104,7 +48,7 @@ export default function WalletPage() {
           <CardContent>
             <div className="text-2xl font-bold">${walletStats.totalBalance.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Ready for payout
+              No earnings yet
             </p>
           </CardContent>
         </Card>
@@ -117,7 +61,7 @@ export default function WalletPage() {
           <CardContent>
             <div className="text-2xl font-bold">${walletStats.pendingBalance.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting approval
+              No pending earnings
             </p>
           </CardContent>
         </Card>
@@ -130,7 +74,7 @@ export default function WalletPage() {
           <CardContent>
             <div className="text-2xl font-bold">${walletStats.totalEarned.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              All time earnings
+              Start earning to see progress
             </p>
           </CardContent>
         </Card>
@@ -143,140 +87,171 @@ export default function WalletPage() {
           <CardContent>
             <div className="text-2xl font-bold">${walletStats.thisMonth.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              No earnings this month
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="transactions" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          <TabsTrigger value="payouts">Payout Methods</TabsTrigger>
-          <TabsTrigger value="analytics">Earnings Analytics</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
+        <div className="flex space-x-1 border-b border-border">
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'transactions'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Transactions
+          </button>
+          <button
+            onClick={() => setActiveTab('payouts')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'payouts'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Payout Methods
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'analytics'
+                ? 'text-foreground border-primary'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
+            }`}
+          >
+            Earnings Analytics
+          </button>
+        </div>
 
-        <TabsContent value="transactions" className="space-y-4">
+        {/* Transactions Tab */}
+        {activeTab === 'transactions' && (
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Transaction History</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        transaction.type === 'earning' 
-                          ? 'bg-green-100 text-green-600' 
-                          : 'bg-blue-100 text-blue-600'
-                      }`}>
-                        {transaction.type === 'earning' ? (
-                          <ArrowUpRight className="h-5 w-5" />
-                        ) : (
-                          <ArrowDownLeft className="h-5 w-5" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">{transaction.description}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{transaction.date}</span>
-                          <span>•</span>
-                          <Badge variant="outline">{transaction.platform}</Badge>
-                          <span>•</span>
-                          <div className="flex items-center gap-1">
-                            {transaction.status === 'completed' ? (
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                            ) : transaction.status === 'pending' ? (
-                              <Clock className="h-3 w-3 text-yellow-500" />
-                            ) : (
-                              <AlertCircle className="h-3 w-3 text-red-500" />
-                            )}
+              {transactions.length === 0 ? (
+                <div className="text-center py-12">
+                  <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No transactions yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your earnings and payouts will appear here once you start participating in campaigns.
+                  </p>
+                  <Button variant="outline">
+                    Browse Campaigns
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactions.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          transaction.type === 'earning' 
+                            ? 'bg-green-100 text-green-600' 
+                            : 'bg-blue-100 text-blue-600'
+                        }`}>
+                          {transaction.type === 'earning' ? (
+                            <TrendingUp className="h-5 w-5" />
+                          ) : (
+                            <CreditCard className="h-5 w-5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{transaction.description}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>{transaction.date}</span>
+                            <span>•</span>
                             <span className="capitalize">{transaction.status}</span>
                           </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className={`font-bold ${
+                          transaction.type === 'earning' ? 'text-green-600' : 'text-blue-600'
+                        }`}>
+                          {transaction.type === 'earning' ? '+' : ''}${transaction.amount.toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold ${
-                        transaction.type === 'earning' ? 'text-green-600' : 'text-blue-600'
-                      }`}>
-                        {transaction.type === 'earning' ? '+' : ''}${transaction.amount.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="payouts" className="space-y-4">
+        {/* Payout Methods Tab */}
+        {activeTab === 'payouts' && (
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Payout Methods</CardTitle>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Method
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {payoutMethods.map((method) => (
-                  <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                        <CreditCard className="h-5 w-5" />
+              {payoutMethods.length === 0 ? (
+                <div className="text-center py-12">
+                  <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No payout methods added</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Add a payout method to receive your earnings. This feature will be available soon.
+                  </p>
+                  <Button variant="outline" disabled>
+                    Coming Soon
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {payoutMethods.map((method) => (
+                    <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                          <CreditCard className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{method.name}</p>
+                          <p className="text-sm text-muted-foreground">{method.account}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{method.name}</p>
-                        <p className="text-sm text-muted-foreground">{method.account}</p>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">Edit</Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {method.isDefault && (
-                        <Badge variant="default">Default</Badge>
-                      )}
-                      <Button variant="outline" size="sm">Edit</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="analytics" className="space-y-4">
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Earnings by Platform</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-red-600 rounded"></div>
-                      <span className="text-sm">YouTube</span>
-                    </div>
-                    <span className="font-medium">$800.00</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-black rounded"></div>
-                      <span className="text-sm">TikTok</span>
-                    </div>
-                    <span className="font-medium">$650.00</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded"></div>
-                      <span className="text-sm">Instagram</span>
-                    </div>
-                    <span className="font-medium">$420.00</span>
-                  </div>
+                <div className="text-center py-8">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No earnings data yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Platform breakdown will appear here once you start earning.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -287,14 +262,18 @@ export default function WalletPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Earnings chart will be implemented here</p>
+                  <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground mb-2">No earnings data yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Monthly trends will appear here once you start earning.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+        )}
+      </div>
     </div>
   );
 }

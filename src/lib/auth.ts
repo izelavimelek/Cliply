@@ -112,6 +112,30 @@ export function useAuth() {
     return user;
   };
 
+  const signInWithGoogle = async (credential: string) => {
+    const response = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ credential }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Google sign-in failed');
+    }
+
+    const { user, token } = await response.json();
+    localStorage.setItem('auth_token', token);
+    setUser(user);
+    // Restore user's theme preference on login
+    if (user.theme_preference) {
+      setTheme(user.theme_preference);
+    }
+    return user;
+  };
+
   const signOut = () => {
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -128,5 +152,5 @@ export function useAuth() {
     setUser(null);
   };
 
-  return { user, loading, signIn, signUp, signOut };
+  return { user, loading, signIn, signUp, signInWithGoogle, signOut };
 }

@@ -189,9 +189,9 @@ export default function BrandSubmissionsPage() {
           updated_at: submission.updated_at,
           campaign: campaignsData.items.find((c: any) => c._id === submission.campaign_id),
           creator: {
-            name: `Creator ${creatorIdSuffix}`,
-            username: `@creator${creatorIdSuffix}`,
-            followers: 1000, // Default follower count
+            name: submission.creator_name || `Creator ${creatorIdSuffix}`,
+            username: submission.creator_username || `@creator${creatorIdSuffix}`,
+            followers: submission.creator_followers || 1000, // Use actual follower count if available
           }
         };
       });
@@ -519,7 +519,7 @@ export default function BrandSubmissionsPage() {
                     {filteredSubmissions.filter(s => s.status === 'rejected').length}
                   </p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-600" />
+                <XCircle className="h-8 w-8 text-red-100" />
               </div>
             </CardContent>
           </Card>
