@@ -23,10 +23,11 @@ import {
   Globe,
   CheckCircle,
   Upload,
-  Camera
+  Camera,
+  Send
 } from "lucide-react";
 import { useCampaignValidation, useSectionFormValidation } from "@/hooks/useCampaignValidation";
-import { getDetailedValidationErrors } from "@/lib/campaign-validation";
+import { getDetailedValidationErrors, getCampaignSectionCompletionStatus } from "@/lib/campaign-validation";
 import {
   CampaignOverview,
   BudgetTimeline,
@@ -39,6 +40,7 @@ import {
   Campaign,
   Submission
 } from "@/components/features/campaigns";
+import { CampaignPublishing } from "@/components/features/campaigns/campaign-publishing";
 import { CompletionPopup } from "@/components/ui/completion-popup";
 
 export default function CampaignDetailPage() {
@@ -314,28 +316,36 @@ export default function CampaignDetailPage() {
         
         const mainSectionName = sectionMapping[sectionName] || sectionName;
         
-        // Check if the section is actually completed before showing popup
+        // Check if the section is actually completed using the fresh campaign data
+        const sectionCompletionStatus = getCampaignSectionCompletionStatus(updatedCampaign);
         const isSectionCompleted = (() => {
           switch (mainSectionName) {
             case 'campaign-overview':
-              return overviewValidation.isCompleted;
+              return sectionCompletionStatus['campaign-overview'];
             case 'budget-timeline':
-              return budgetValidation.isCompleted;
+              return sectionCompletionStatus['budget-timeline'];
             case 'content-requirements':
-              return contentValidation.isCompleted;
+              return sectionCompletionStatus['content-requirements'];
             case 'audience-targeting':
-              return audienceValidation.isCompleted;
-            case 'agreements-compliance':
-              return true; // Always show for agreements
+              return sectionCompletionStatus['audience-targeting'];
             case 'assets':
-              return true; // Always show for assets
+              return sectionCompletionStatus['assets'];
             default:
               return false;
           }
         })();
         
+        console.log('Section completion check:', {
+          sectionName,
+          mainSectionName,
+          isSectionCompleted,
+          popupMuted,
+          sectionCompletionStatus
+        });
+        
         // Show completion popup only if section is actually completed and not muted
         if (!popupMuted && isSectionCompleted) {
+          console.log('Showing completion popup for:', mainSectionName);
           setCompletionPopup({
             isOpen: true,
             sectionName: mainSectionName
@@ -371,8 +381,8 @@ export default function CampaignDetailPage() {
       'campaign-overview': 'budget-timeline',
       'budget-timeline': 'content-requirements',
       'content-requirements': 'audience-targeting',
-      'audience-targeting': 'agreements-compliance',
-      'agreements-compliance': 'assets'
+      'audience-targeting': 'assets',
+      'assets': 'publishing'
     };
     
     const nextSection = nextSectionMap[completionPopup.sectionName];
@@ -805,44 +815,22 @@ export default function CampaignDetailPage() {
             </button>
           </div>
 
-          {/* Management Section */}
+          {/* Publishing Section */}
           <div className="space-y-1">
             <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Management
+              Publishing
             </div>
-            
-            {isDraft && (
-              <button 
-                onClick={() => updateCampaignStatus('active')}
-                disabled={updating}
-                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Activate
-              </button>
-            )}
-            
-            {isActive && (
-              <button 
-                onClick={() => updateCampaignStatus('paused')}
-                disabled={updating}
-                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
-              >
-                <Pause className="h-4 w-4" />
-                Pause
-              </button>
-            )}
-            
-            {isPaused && (
-              <button 
-                onClick={() => updateCampaignStatus('active')}
-                disabled={updating}
-                className="w-full text-left px-2 py-2 text-sm rounded-md hover:bg-muted/50 transition-colors flex items-center gap-2"
-              >
-                <Play className="h-4 w-4" />
-                Resume
-              </button>
-            )}
+            <button 
+              onClick={() => setActiveSection('publishing')}
+              className={`w-full text-left px-2 py-2 text-sm rounded-md transition-all duration-200 flex items-center gap-2 border ${
+                activeSection === 'publishing' 
+                  ? 'bg-primary/20 dark:bg-primary/30 text-primary-foreground dark:text-primary-100 border-primary/40 dark:border-primary/500 shadow-md' 
+                  : 'bg-muted/50 dark:bg-muted/30 text-muted-foreground dark:text-muted-foreground border-transparent hover:bg-muted dark:hover:bg-muted/50 hover:border-border'
+              }`}
+            >
+              <Send className="h-4 w-4" />
+              Publish Campaign
+            </button>
           </div>
         </div>
       </div>
@@ -1002,6 +990,18 @@ export default function CampaignDetailPage() {
             cancelEditing={cancelEditing}
             setActiveSection={setActiveSection}
           />
+        )}
+
+        {/* Publishing Section */}
+        {activeSection === 'publishing' && (
+          <div className="max-w-4xl mx-auto">
+            <CampaignPublishing
+              campaign={campaign}
+              onStatusChange={(newStatus) => {
+                setCampaign(prev => prev ? { ...prev, status: newStatus as any } : null);
+              }}
+            />
+          </div>
         )}
 
         {/* End of main content sections */}

@@ -23,7 +23,9 @@ import {
   RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
-  Minus
+  Minus,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import Link from "next/link";
 import { useBrandProfileModal } from "@/hooks/useBrandProfileModal";
@@ -75,7 +77,8 @@ export default function BrandAnalyticsPage() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("30d");
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("campaigns");
+  const [isCampaignFilterCollapsed, setIsCampaignFilterCollapsed] = useState(false);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   
@@ -89,7 +92,7 @@ export default function BrandAnalyticsPage() {
       }
 
       if (user.role !== "brand") {
-        router.push("/onboarding");
+        router.push("/auth");
         return;
       }
 
@@ -385,6 +388,7 @@ export default function BrandAnalyticsPage() {
       .slice(0, 5);
   };
 
+
   if (loading) {
     return (
       <div className="p-6 space-y-6">
@@ -463,68 +467,85 @@ export default function BrandAnalyticsPage() {
       {/* Campaign Filter */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Campaign Filter
-          </CardTitle>
-          <CardDescription>
-            Select which campaigns to include in your analytics
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                className="flex items-center gap-2"
-              >
-                <Target className="h-4 w-4" />
-                Select All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAll}
-                disabled={selectedCampaigns.length <= 1}
-                className="flex items-center gap-2"
-              >
-                <Target className="h-4 w-4" />
-                Clear All
-              </Button>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Campaign Filter
+              </CardTitle>
+              <CardDescription>
+                Select which campaigns to include in your analytics
+              </CardDescription>
             </div>
-            
-            {/* Campaign Buttons */}
-            <div className="flex flex-wrap gap-2">
-              {campaigns.filter(c => c.status !== 'deleted').map((campaign) => {
-                const isSelected = selectedCampaigns.includes(campaign._id);
-                const isLastSelected = isSelected && selectedCampaigns.length <= 1;
-                
-                return (
-                  <Button
-                    key={campaign._id}
-                    variant={isSelected ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => !isLastSelected && handleCampaignToggle(campaign._id)}
-                    className={`flex items-center gap-2 ${isLastSelected ? 'cursor-not-allowed opacity-100' : ''}`}
-                    title={isLastSelected ? 'Cannot deselect the last campaign' : ''}
-                  >
-                    <Target className="h-4 w-4" />
-                    {campaign.title}
-                    <Badge variant="secondary" className="ml-1">
-                      {campaign.status}
-                    </Badge>
-                  </Button>
-                );
-              })}
-              {campaigns.filter(c => c.status !== 'deleted').length === 0 && (
-                <p className="text-muted-foreground">No campaigns available</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCampaignFilterCollapsed(!isCampaignFilterCollapsed)}
+              className="gap-2"
+            >
+              {isCampaignFilterCollapsed ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
               )}
-            </div>
+            </Button>
           </div>
-        </CardContent>
+        </CardHeader>
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isCampaignFilterCollapsed ? 'max-h-0 opacity-0' : 'max-h-96 opacity-100'
+        }`}>
+          <CardContent className="pt-3 pb-4">
+            <div className="space-y-3">
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="h-7 px-3 text-xs gap-1"
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearAll}
+                  disabled={selectedCampaigns.length <= 1}
+                  className="h-7 px-3 text-xs gap-1"
+                >
+                  Clear All
+                </Button>
+              </div>
+              
+              {/* Campaign Buttons */}
+              <div className="flex flex-wrap gap-1.5">
+                {campaigns.filter(c => c.status !== 'deleted').map((campaign) => {
+                  const isSelected = selectedCampaigns.includes(campaign._id);
+                  const isLastSelected = isSelected && selectedCampaigns.length <= 1;
+                  
+                  return (
+                    <Button
+                      key={campaign._id}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => !isLastSelected && handleCampaignToggle(campaign._id)}
+                      className={`h-8 px-3 text-xs gap-1.5 ${isLastSelected ? 'cursor-not-allowed opacity-100' : ''}`}
+                      title={isLastSelected ? 'Cannot deselect the last campaign' : ''}
+                    >
+                      {campaign.title}
+                      <Badge variant="secondary" className="h-4 px-1.5 text-[10px] font-medium">
+                        {campaign.status}
+                      </Badge>
+                    </Button>
+                  );
+                })}
+                {campaigns.filter(c => c.status !== 'deleted').length === 0 && (
+                  <p className="text-xs text-muted-foreground">No campaigns available</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </div>
       </Card>
 
       {/* Key Metrics */}
@@ -593,16 +614,6 @@ export default function BrandAnalyticsPage() {
       <div className="space-y-4">
         <div className="flex space-x-1 border-b border-border">
           <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'overview'
-                ? 'text-foreground border-primary'
-                : 'text-muted-foreground border-transparent hover:text-foreground'
-            }`}
-          >
-            Overview
-          </button>
-          <button
             onClick={() => setActiveTab('campaigns')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'campaigns'
@@ -644,122 +655,20 @@ export default function BrandAnalyticsPage() {
           </button>
         </div>
 
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Performing Campaigns */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Performing Campaigns</CardTitle>
-                <CardDescription>Campaigns with highest view counts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {getTopPerformingCampaigns().length > 0 ? (
-                  <div className="space-y-4">
-                    {getTopPerformingCampaigns().map((campaign, index) => (
-                      <div key={campaign._id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-semibold">#{index + 1}</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{campaign.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {campaign.platforms?.join(', ') || 'Multiple platforms'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{(campaign.analytics?.views || 0).toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">views</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No campaign data available</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Submissions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Submissions</CardTitle>
-                <CardDescription>Latest creator submissions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {getRecentSubmissions().length > 0 ? (
-                  <div className="space-y-4">
-                    {getRecentSubmissions().map((submission) => (
-                      <div key={submission._id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                            <Users className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{submission.creator_name || 'Creator Submission'}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(submission.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge 
-                            variant="outline"
-                            className={
-                              submission.status === 'approved' 
-                                ? 'bg-green-100 text-green-800 border-green-200' 
-                                : submission.status === 'rejected'
-                                ? 'bg-red-100 text-red-800 border-red-200'
-                                : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                            }
-                          >
-                            {submission.status}
-                          </Badge>
-                          {submission.views && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {submission.views.toLocaleString()} views
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No submissions yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          </div>
-        )}
-
         {activeTab === 'campaigns' && (
           <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-              <CardDescription>Detailed performance metrics for each campaign</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getFilteredCampaigns().length > 0 ? (
-                <div className="space-y-4">
-                  {getFilteredCampaigns().map((campaign) => (
-                    <div key={campaign._id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
+            {campaigns.filter(c => c.status !== 'deleted').length > 0 ? (
+              <div className="grid grid-cols-1 gap-6">
+                {campaigns.filter(c => c.status !== 'deleted').map((campaign) => (
+                  <Card key={campaign._id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold">{campaign.title}</h3>
-                          <p className="text-sm text-muted-foreground">
+                          <CardTitle className="text-xl">{campaign.title}</CardTitle>
+                          <CardDescription>
                             {campaign.platforms?.join(', ') || 'Multiple platforms'} • 
-                            Status: {campaign.status}
-                          </p>
+                            Status: <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>{campaign.status}</Badge>
+                          </CardDescription>
                         </div>
                         <Link href={`/brand/campaigns/${campaign._id}`}>
                           <Button variant="outline" size="sm">
@@ -767,90 +676,124 @@ export default function BrandAnalyticsPage() {
                           </Button>
                         </Link>
                       </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{(campaign.analytics?.views || 0).toLocaleString()}</p>
+                          <p className="text-3xl font-bold">{(campaign.analytics?.views || 0).toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">Views</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{(campaign.analytics?.engagement_rate || 0).toFixed(1)}%</p>
+                          <p className="text-3xl font-bold">{(campaign.analytics?.engagement_rate || 0).toFixed(1)}%</p>
                           <p className="text-sm text-muted-foreground">Engagement</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">${(campaign.budget_spent || 0).toLocaleString()}</p>
+                          <p className="text-3xl font-bold">${(campaign.budget_spent || 0).toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">Spent</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{(campaign.submissions_count || 0)}</p>
+                          <p className="text-3xl font-bold">{(campaign.submissions_count || 0)}</p>
                           <p className="text-sm text-muted-foreground">Submissions</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
                   <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No campaigns selected or available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  <h3 className="text-lg font-semibold mb-2">No Campaigns Yet</h3>
+                  <p className="text-muted-foreground mb-4">Create your first campaign to start tracking analytics.</p>
+                  <Button onClick={() => router.push('/brand/campaigns/new')}>
+                    Create Campaign
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
         {activeTab === 'submissions' && (
           <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Submission Analytics</CardTitle>
-              <CardDescription>Performance metrics for creator submissions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {getRecentSubmissions().length > 0 ? (
-                <div className="space-y-4">
-                  {getRecentSubmissions().map((submission) => (
-                    <div key={submission._id} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
+            {submissions.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6">
+                {submissions.map((submission) => (
+                  <Card key={submission._id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold">Submission #{submission._id.slice(-6)}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(submission.created_at).toLocaleDateString()}
-                          </p>
+                          <CardTitle className="text-xl">Submission #{submission._id.slice(-6)}</CardTitle>
+                          <CardDescription>
+                            {submission.creator_name || 'Creator Submission'} • 
+                            {new Date(submission.created_at).toLocaleDateString()} • 
+                            Campaign: {(() => {
+                              const campaign = campaigns.find(c => c._id === submission.campaign_id);
+                              return campaign ? campaign.title : 'Unknown';
+                            })()}
+                          </CardDescription>
                         </div>
-                        <Badge variant={submission.status === 'approved' ? 'default' : 'secondary'}>
-                          {submission.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={
+                              submission.status === 'approved' 
+                                ? 'default' 
+                                : submission.status === 'rejected'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                          >
+                            {submission.status}
+                          </Badge>
+                          {submission.post_url && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={submission.post_url} target="_blank" rel="noopener noreferrer">
+                                View Post
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{(submission.views || 0).toLocaleString()}</p>
+                          <p className="text-3xl font-bold">{(submission.views || 0).toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">Views</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">${(submission.earnings || 0).toFixed(2)}</p>
+                          <p className="text-3xl font-bold">${(submission.earnings || 0).toFixed(2)}</p>
                           <p className="text-sm text-muted-foreground">Earnings</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">
-                            {submission.verified_at ? '✓' : '⏳'}
+                          <p className="text-3xl font-bold">
+                            {submission.verified_at ? '✅' : submission.status === 'rejected' ? '❌' : '⏳'}
                           </p>
-                          <p className="text-sm text-muted-foreground">Status</p>
+                          <p className="text-sm text-muted-foreground">Verification</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-3xl font-bold">
+                            {new Date(submission.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">Submitted</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No submissions available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  <h3 className="text-lg font-semibold mb-2">No Submissions Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Submissions will appear here once creators start applying to your campaigns.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

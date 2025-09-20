@@ -17,16 +17,32 @@ import {
   BarChart3,
   Target,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  CheckCircle
 } from "lucide-react";
 
 interface AnalyticsData {
-  totalViews: number;
-  totalEngagement: number;
+  // Campaign Performance
+  totalCampaignsJoined: number;
+  activeCampaigns: number;
+  completedCampaigns: number;
+  approvalRate: number;
+  
+  // Earnings & Performance
   totalEarnings: number;
-  avgEngagementRate: number;
-  totalFollowers: number;
-  contentCount: number;
+  averageEarningsPerCampaign: number;
+  pendingEarnings: number;
+  
+  // Content Performance
+  totalSubmissions: number;
+  approvedSubmissions: number;
+  rejectedSubmissions: number;
+  
+  // Time-based metrics
+  averageApprovalTime: number; // in days
+  totalViews: number;
+  averageViewsPerSubmission: number;
 }
 
 interface PlatformData {
@@ -54,12 +70,19 @@ export default function CreatorAnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
-    totalViews: 0,
-    totalEngagement: 0,
+    totalCampaignsJoined: 0,
+    activeCampaigns: 0,
+    completedCampaigns: 0,
+    approvalRate: 0,
     totalEarnings: 0,
-    avgEngagementRate: 0,
-    totalFollowers: 0,
-    contentCount: 0
+    averageEarningsPerCampaign: 0,
+    pendingEarnings: 0,
+    totalSubmissions: 0,
+    approvedSubmissions: 0,
+    rejectedSubmissions: 0,
+    averageApprovalTime: 0,
+    totalViews: 0,
+    averageViewsPerSubmission: 0
   });
 
   const [platformStats, setPlatformStats] = useState<{
@@ -86,7 +109,7 @@ export default function CreatorAnalyticsPage() {
       }
 
       // Fetch analytics data from API
-      const response = await fetch('/api/creator/analytics', {
+      const response = await fetch(`/api/creator/analytics?timeRange=${timeRange}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -97,12 +120,19 @@ export default function CreatorAnalyticsPage() {
         if (response.status === 404) {
           // No analytics data yet - this is expected for new users
           setAnalyticsData({
-            totalViews: 0,
-            totalEngagement: 0,
+            totalCampaignsJoined: 0,
+            activeCampaigns: 0,
+            completedCampaigns: 0,
+            approvalRate: 0,
             totalEarnings: 0,
-            avgEngagementRate: 0,
-            totalFollowers: 0,
-            contentCount: 0
+            averageEarningsPerCampaign: 0,
+            pendingEarnings: 0,
+            totalSubmissions: 0,
+            approvedSubmissions: 0,
+            rejectedSubmissions: 0,
+            averageApprovalTime: 0,
+            totalViews: 0,
+            averageViewsPerSubmission: 0
           });
           setTopContent([]);
           return;
@@ -112,19 +142,28 @@ export default function CreatorAnalyticsPage() {
 
       const data = await response.json();
       setAnalyticsData(data.overview || {
-        totalViews: 0,
-        totalEngagement: 0,
+        totalCampaignsJoined: 0,
+        activeCampaigns: 0,
+        completedCampaigns: 0,
+        approvalRate: 0,
         totalEarnings: 0,
-        avgEngagementRate: 0,
-        totalFollowers: 0,
-        contentCount: 0
+        averageEarningsPerCampaign: 0,
+        pendingEarnings: 0,
+        totalSubmissions: 0,
+        approvedSubmissions: 0,
+        rejectedSubmissions: 0,
+        averageApprovalTime: 0,
+        totalViews: 0,
+        averageViewsPerSubmission: 0
       });
-      setPlatformStats(data.platforms || {
+      setTopContent(data.topContent || []);
+      
+      // Set platform stats to empty since we're focusing on campaign metrics
+      setPlatformStats({
         youtube: { views: 0, followers: 0, engagement: 0, earnings: 0, connected: false },
         tiktok: { views: 0, followers: 0, engagement: 0, earnings: 0, connected: false },
         instagram: { views: 0, followers: 0, engagement: 0, earnings: 0, connected: false }
       });
-      setTopContent(data.topContent || []);
     } catch (err) {
       console.error('Error fetching analytics:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
@@ -203,34 +242,63 @@ export default function CreatorAnalyticsPage() {
         </div>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Campaign Performance Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Campaigns Joined</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analyticsData.totalViews.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{analyticsData.totalCampaignsJoined}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.totalViews === 0 ? 'No views yet' : 'Across all platforms'}
+              {analyticsData.totalCampaignsJoined === 0 ? 'No campaigns joined yet' : 'Total campaigns participated'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Engagement</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analyticsData.totalEngagement.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{analyticsData.activeCampaigns}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.avgEngagementRate > 0 ? `${analyticsData.avgEngagementRate}% engagement rate` : 'No engagement yet'}
+              {analyticsData.activeCampaigns === 0 ? 'No active campaigns' : 'Currently in progress'}
             </p>
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed Campaigns</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.completedCampaigns}</div>
+            <p className="text-xs text-muted-foreground">
+              {analyticsData.completedCampaigns === 0 ? 'No completed campaigns' : 'Successfully finished'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.approvalRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {analyticsData.approvalRate === 0 ? 'No submissions yet' : 'Submissions approved'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Earnings & Performance Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -239,46 +307,46 @@ export default function CreatorAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">${analyticsData.totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.totalEarnings === 0 ? 'Start earning to see progress' : 'From all campaigns'}
+              {analyticsData.totalEarnings === 0 ? 'No earnings yet' : 'From all campaigns'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Followers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Avg. per Campaign</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analyticsData.totalFollowers.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${analyticsData.averageEarningsPerCampaign.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.totalFollowers === 0 ? 'Connect accounts to see followers' : 'Across all platforms'}
+              {analyticsData.averageEarningsPerCampaign === 0 ? 'No campaigns completed' : 'Average earnings per campaign'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Content Published</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Earnings</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analyticsData.contentCount}</div>
+            <div className="text-2xl font-bold">${analyticsData.pendingEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.contentCount === 0 ? 'No content yet' : 'This period'}
+              {analyticsData.pendingEarnings === 0 ? 'No pending payments' : 'Awaiting payment'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Engagement Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analyticsData.avgEngagementRate.toFixed(1)}%</div>
+            <div className="text-2xl font-bold">{analyticsData.totalViews.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              {analyticsData.avgEngagementRate === 0 ? 'No engagement data yet' : 'Average across content'}
+              {analyticsData.totalViews === 0 ? 'No views yet' : 'Across all submissions'}
             </p>
           </CardContent>
         </Card>

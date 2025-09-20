@@ -108,17 +108,6 @@ export function BudgetTimeline({
                     <p className="text-sm text-muted-foreground">Set key dates for your campaign</p>
                   </div>
                 </div>
-                {editingSection !== 'timeline-config' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => startEditing('timeline-config')}
-                    className="hover:bg-primary/10"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
               </div>
             </div>
             <CardContent className="p-4">
@@ -217,39 +206,56 @@ export function BudgetTimeline({
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    {/* Clickable Start Date */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('timeline-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Start Date<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <p className="text-foreground group-hover:text-primary transition-colors">
                         {campaign?.start_date ? (
                           new Date(campaign.start_date).toLocaleDateString()
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to set start date</span>
+                          <span className="text-muted-foreground italic">Click to set start date</span>
                         )}
                       </p>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    
+                    {/* Clickable End Date */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('timeline-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">End Date<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <p className="text-foreground group-hover:text-primary transition-colors">
                         {campaign?.end_date ? (
                           new Date(campaign.end_date).toLocaleDateString()
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to set end date</span>
+                          <span className="text-muted-foreground italic">Click to set end date</span>
                         )}
                       </p>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    
+                    {/* Clickable Submission Deadline */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('timeline-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Submission Deadline<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <p className="text-foreground group-hover:text-primary transition-colors">
                         {campaign?.submission_deadline ? (
                           new Date(campaign.submission_deadline).toLocaleDateString()
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to set deadline</span>
+                          <span className="text-muted-foreground italic">Click to set deadline</span>
                         )}
                       </p>
                     </div>
@@ -272,17 +278,6 @@ export function BudgetTimeline({
                     <p className="text-sm text-muted-foreground">Set your spending limits and payment structure</p>
                   </div>
                 </div>
-                {editingSection !== 'budget-config' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => startEditing('budget-config')}
-                    className="hover:bg-primary/10"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
               </div>
             </div>
             <CardContent className="p-4">
@@ -424,46 +419,65 @@ export function BudgetTimeline({
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    {/* Clickable Total Budget */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('budget-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Total Budget<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <p className="text-foreground group-hover:text-primary transition-colors">
                         {campaign?.total_budget ? `$${campaign.total_budget.toLocaleString()}` : (
-                          <span className="text-muted-foreground italic">Click edit to set budget</span>
+                          <span className="text-muted-foreground italic">Click to set budget</span>
                         )}
                       </p>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    
+                    {/* Clickable Payment Type */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('budget-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Payment Type<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <div className="group-hover:text-primary transition-colors">
                         {campaign?.rate_type ? (
                           <Badge variant="secondary" className="capitalize">
                             {campaign.rate_type.replace('_', ' ')}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to set type</span>
+                          <span className="text-muted-foreground italic">Click to set type</span>
                         )}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Rate<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
-                      {campaign?.rate_per_thousand ? (
-                        <p className="text-foreground">
-                          ${campaign.rate_per_thousand.toFixed(2)}
-                          {campaign.rate_type === 'per_thousand' ? ' per 1K views' : ''}
-                        </p>
-                      ) : campaign?.fixed_fee ? (
-                        <p className="text-foreground">
-                          ${campaign.fixed_fee.toFixed(2)} per creator
-                        </p>
-                      ) : (
-                        <span className="text-muted-foreground italic">Click edit to set rate</span>
-                      )}
+                    </div>
+                    
+                    {/* Clickable Rate */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('budget-config')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-base">Rate<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="group-hover:text-primary transition-colors">
+                        {campaign?.rate_per_thousand ? (
+                          <p className="text-foreground group-hover:text-primary transition-colors">
+                            ${campaign.rate_per_thousand.toFixed(2)}
+                            {campaign.rate_type === 'per_thousand' ? ' per 1K views' : ''}
+                          </p>
+                        ) : campaign?.fixed_fee ? (
+                          <p className="text-foreground group-hover:text-primary transition-colors">
+                            ${campaign.fixed_fee.toFixed(2)} per creator
+                          </p>
+                        ) : (
+                          <span className="text-muted-foreground italic">Click to set rate</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

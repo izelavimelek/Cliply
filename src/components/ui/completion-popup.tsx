@@ -38,35 +38,47 @@ const sectionInfo = {
   },
   'audience-targeting': {
     title: 'Audience Targeting Complete!',
-    description: 'Awesome! Your audience is defined. Now let\'s set up legal agreements and compliance.',
+    description: 'Awesome! Your audience is defined. Now let\'s upload brand assets and resources for creators.',
     icon: <Users className="w-8 h-8 text-green-600" />,
-    nextStep: 'Review agreements and compliance requirements',
-    nextSection: 'agreements-compliance'
-  },
-  'agreements-compliance': {
-    title: 'Agreements & Compliance Complete!',
-    description: 'Fantastic! Legal requirements are set. Finally, let\'s upload any assets creators might need.',
-    icon: <Shield className="w-8 h-8 text-green-600" />,
     nextStep: 'Upload brand assets and resources',
     nextSection: 'assets'
   },
   'assets': {
     title: 'Assets Upload Complete!',
-    description: 'Congratulations! Your campaign is fully set up and ready to go live.',
+    description: 'Perfect! Assets are ready. Now you can review submissions or publish your campaign.',
     icon: <Upload className="w-8 h-8 text-green-600" />,
-    nextStep: 'Your campaign is ready to launch!',
+    nextStep: 'Review and publish your campaign',
+    nextSection: 'publishing'
+  },
+  'publishing': {
+    title: 'Campaign Published!',
+    description: 'Congratulations! Your campaign is now live and ready for creator applications.',
+    icon: <CheckCircle className="w-8 h-8 text-green-600" />,
+    nextStep: 'Your campaign is live!',
     nextSection: undefined
   }
 };
 
 export function CompletionPopup({ isOpen, onClose, sectionName, nextSection, onNextSection, onMute }: CompletionPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setIsVisible(true);
+      // Small delay before showing to ensure smooth entrance
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+        setIsAnimating(true);
+      }, 100);
+      return () => clearTimeout(timer);
     } else {
-      setIsVisible(false);
+      // Start exit animation
+      setIsAnimating(false);
+      // Wait for animation to complete before hiding
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -83,12 +95,24 @@ export function CompletionPopup({ isOpen, onClose, sectionName, nextSection, onN
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md mx-auto animate-in slide-in-from-bottom-4 duration-300">
+    <div className={`fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-500 ${
+      isAnimating ? 'opacity-100' : 'opacity-0'
+    }`}>
+      <Card className={`w-full max-w-md mx-auto transition-all duration-500 transform ${
+        isAnimating 
+          ? 'animate-in slide-in-from-bottom-4 fade-in-0 scale-100 opacity-100' 
+          : 'animate-out slide-out-to-bottom-4 fade-out-0 scale-95 opacity-0'
+      }`}>
         <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
+          <div className={`flex items-start justify-between mb-4 transition-all duration-700 delay-100 ${
+            isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}>
             <div className="flex items-center gap-3">
-              {section.icon}
+              <div className={`transition-all duration-700 delay-200 ${
+                isAnimating ? 'scale-100 rotate-0' : 'scale-75 rotate-12'
+              }`}>
+                {section.icon}
+              </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">{section.title}</h3>
               </div>
@@ -97,35 +121,41 @@ export function CompletionPopup({ isOpen, onClose, sectionName, nextSection, onN
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 hover:bg-muted"
+              className="h-8 w-8 p-0 hover:bg-muted transition-all duration-200"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <p className="text-muted-foreground mb-6 leading-relaxed">
+          <p className={`text-muted-foreground mb-6 leading-relaxed transition-all duration-700 delay-200 ${
+            isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}>
             {section.description}
           </p>
 
-          <div className="bg-muted/50 rounded-lg p-4 mb-6">
+          <div className={`bg-muted/50 rounded-lg p-4 mb-6 transition-all duration-700 delay-300 ${
+            isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}>
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <ArrowRight className="h-4 w-4 text-primary" />
               <span>Next: {section.nextStep}</span>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className={`flex gap-3 transition-all duration-700 delay-400 ${
+            isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}>
             <Button
               variant="outline"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 transition-all duration-200 hover:scale-105"
             >
               Continue Later
             </Button>
             {section.nextSection && onNextSection && (
               <Button
                 onClick={handleNextSection}
-                className="flex-1 bg-primary hover:bg-primary/90"
+                className="flex-1 bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
               >
                 Go to Next Section
               </Button>
@@ -134,7 +164,9 @@ export function CompletionPopup({ isOpen, onClose, sectionName, nextSection, onN
           
           {/* Mute Link */}
           {onMute && (
-            <div className="mt-4 pt-4 border-t border-border/50 text-center">
+            <div className={`mt-4 pt-4 border-t border-border/50 text-center transition-all duration-700 delay-500 ${
+              isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+            }`}>
               <button
                 onClick={onMute}
                 className="text-sm text-muted-foreground hover:text-blue-600 hover:underline transition-all duration-200"

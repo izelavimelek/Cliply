@@ -41,7 +41,6 @@ interface SubmissionStats {
   pending: number;
   approved: number;
   rejected: number;
-  totalEarned: number;
 }
 
 export default function SubmissionsPage() {
@@ -59,8 +58,7 @@ export default function SubmissionsPage() {
   const [stats, setStats] = useState<SubmissionStats>({
     pending: 0,
     approved: 0,
-    rejected: 0,
-    totalEarned: 0
+    rejected: 0
   });
   
   const [loading, setLoading] = useState(true);
@@ -104,8 +102,7 @@ export default function SubmissionsPage() {
       const newStats = {
         pending: groupedSubmissions.pending.length,
         approved: groupedSubmissions.approved.length,
-        rejected: groupedSubmissions.rejected.length,
-        totalEarned: allSubmissions.reduce((total, sub) => total + (sub.earnings || 0), 0)
+        rejected: groupedSubmissions.rejected.length
       };
 
       setStats(newStats);
@@ -126,6 +123,47 @@ export default function SubmissionsPage() {
   const handleViewSubmission = (submission: Submission) => {
     if (submission.post_url) {
       window.open(submission.post_url, '_blank');
+    } else if (submission.media_urls && submission.media_urls.length > 0) {
+      // Check if it's a blob URL (temporary) or a real URL
+      const mediaUrl = submission.media_urls[0];
+      if (mediaUrl.startsWith('blob:')) {
+        // For blob URLs, show a more user-friendly message
+        const userConfirmed = window.confirm(
+          'This file was uploaded as a temporary file. Blob URLs expire when the page is refreshed.\n\n' +
+          'Would you like to try downloading it? (Note: This may not work if the page has been refreshed since upload)'
+        );
+        
+        if (userConfirmed) {
+          try {
+            // First, try to fetch the blob to see if it's still valid
+            fetch(mediaUrl)
+              .then(response => {
+                if (response.ok) {
+                  // If successful, create download link
+                  const link = document.createElement('a');
+                  link.href = mediaUrl;
+                  link.download = `submission-${submission._id}-media`;
+                  link.style.display = 'none';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                } else {
+                  throw new Error('Blob URL is no longer valid');
+                }
+              })
+              .catch(error => {
+                console.error('Error accessing blob URL:', error);
+                alert('This file is no longer available. Blob URLs expire when the page is refreshed or the browser session ends.');
+              });
+          } catch (error) {
+            console.error('Error creating download link:', error);
+            alert('This file is no longer available. Blob URLs expire when the page is refreshed or the browser session ends.');
+          }
+        }
+      } else {
+        // For real URLs, open normally
+        window.open(mediaUrl, '_blank');
+      }
     }
   };
 
@@ -156,17 +194,55 @@ export default function SubmissionsPage() {
     }
   };
 
+  // Get status badge style for approved submissions
+  const getStatusBadgeStyle = (status: string) => {
+    if (status === 'approved') {
+      return 'bg-green-500 text-white hover:bg-green-600';
+    }
+    return '';
+  };
+
   // Get status icon
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-100" />;
+        return <XCircle className="h-4 w-4 text-red-500" />;
       case 'pending':
       default:
         return <Clock className="h-4 w-4 text-yellow-500" />;
     }
+  };
+
+  // Check if submission has viewable content
+  const hasViewableContent = (submission: Submission) => {
+    return submission.post_url || (submission.media_urls && submission.media_urls.length > 0);
+  };
+
+  // Get view button icon based on content type
+  const getViewButtonIcon = (submission: Submission) => {
+    if (submission.post_url) {
+      return <ExternalLink className="h-4 w-4" />;
+    } else if (submission.media_urls && submission.media_urls.length > 0) {
+      return <FileText className="h-4 w-4" />;
+    }
+    return <ExternalLink className="h-4 w-4" />;
+  };
+
+  // Get view button title/tooltip based on content type
+  const getViewButtonTitle = (submission: Submission) => {
+    if (submission.post_url) {
+      return 'View post';
+    } else if (submission.media_urls && submission.media_urls.length > 0) {
+      const mediaUrl = submission.media_urls[0];
+      if (mediaUrl.startsWith('blob:')) {
+        return 'Download file (temporary - may not work if page was refreshed)';
+      } else {
+        return 'View/download file';
+      }
+    }
+    return 'View content';
   };
 
   if (loading) {
@@ -202,17 +278,28 @@ export default function SubmissionsPage() {
         <div>
           <h1 className="text-3xl font-bold">Submissions</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => setActiveTab('all')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-sm font-medium">All</p>
+                <p className="text-2xl font-bold">{stats.pending + stats.approved + stats.rejected}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => setActiveTab('pending')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-yellow-500" />
@@ -223,7 +310,10 @@ export default function SubmissionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => setActiveTab('approved')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -234,24 +324,16 @@ export default function SubmissionsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => setActiveTab('rejected')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-100" />
+              <XCircle className="h-4 w-4 text-red-500" />
               <div>
                 <p className="text-sm font-medium">Rejected</p>
                 <p className="text-2xl font-bold">{stats.rejected}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-sm font-medium">Total Earned</p>
-                <p className="text-2xl font-bold">${stats.totalEarned.toFixed(2)}</p>
               </div>
             </div>
           </CardContent>
@@ -354,20 +436,26 @@ export default function SubmissionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={getStatusBadgeVariant(submission.status)}>
+                  <Badge 
+                    variant={getStatusBadgeVariant(submission.status)}
+                    className={getStatusBadgeStyle(submission.status)}
+                  >
                     <div className="flex items-center gap-1">
-                      {getStatusIcon(submission.status)}
+                      {submission.status === 'approved' && <CheckCircle className="h-3 w-3 text-white" />}
+                      {submission.status === 'rejected' && <XCircle className="h-3 w-3 text-white" />}
+                      {submission.status === 'pending' && <Clock className="h-3 w-3 text-yellow-500" />}
                       {submission.status === 'pending' ? 'Pending Review' : 
                        submission.status === 'approved' ? 'Approved' : 'Rejected'}
                     </div>
                   </Badge>
-                  {submission.post_url && (
+                  {hasViewableContent(submission) && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewSubmission(submission)}
+                      title={getViewButtonTitle(submission)}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {getViewButtonIcon(submission)}
                     </Button>
                   )}
                 </div>
@@ -429,13 +517,14 @@ export default function SubmissionsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">Pending Review</Badge>
-                  {submission.post_url && (
+                  {hasViewableContent(submission) && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewSubmission(submission)}
+                      title={getViewButtonTitle(submission)}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {getViewButtonIcon(submission)}
                     </Button>
                   )}
                 </div>
@@ -496,14 +585,23 @@ export default function SubmissionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="default">Approved</Badge>
-                  {submission.post_url && (
+                  <Badge 
+                    variant="default"
+                    className="bg-green-500 text-white hover:bg-green-600"
+                  >
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3 text-white" />
+                      Approved
+                    </div>
+                  </Badge>
+                  {hasViewableContent(submission) && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewSubmission(submission)}
+                      title={getViewButtonTitle(submission)}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {getViewButtonIcon(submission)}
                     </Button>
                   )}
                 </div>
@@ -570,13 +668,14 @@ export default function SubmissionsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="destructive">Rejected</Badge>
-                  {submission.post_url && (
+                  {hasViewableContent(submission) && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => handleViewSubmission(submission)}
+                      title={getViewButtonTitle(submission)}
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      {getViewButtonIcon(submission)}
                     </Button>
                   )}
                 </div>

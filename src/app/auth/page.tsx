@@ -42,8 +42,8 @@ export default function AuthPage() {
       } else if (user.role === "admin") {
         router.push("/admin");
       } else {
-        // Fallback to onboarding if no role is set
-        router.push("/onboarding");
+        // Fallback to creator dashboard if no role is set
+        router.push("/creator");
       }
     } catch (error) {
       console.error("Auth error:", error);
@@ -85,8 +85,8 @@ export default function AuthPage() {
               } else if (user.role === "admin") {
                 router.push("/admin");
               } else {
-                // Fallback to onboarding if no role is set
-                router.push("/onboarding");
+                // Fallback to creator dashboard if no role is set
+                router.push("/creator");
               }
             } catch (error) {
               console.error("Google sign-in error:", error);

@@ -23,6 +23,7 @@ export function CommunicationAssets({
 }: CommunicationAssetsProps) {
   const [brandId, setBrandId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [hasAnnouncements, setHasAnnouncements] = useState(false);
 
   useEffect(() => {
     // Get brand ID from campaign data
@@ -48,7 +49,7 @@ export function CommunicationAssets({
                 </p>
               </div>
             </div>
-            {brandId && (
+            {brandId && hasAnnouncements && (
               <Button onClick={() => setIsDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Announcement
@@ -66,6 +67,7 @@ export function CommunicationAssets({
             brandId={brandId} 
             isDialogOpen={isDialogOpen}
             setIsDialogOpen={setIsDialogOpen}
+            onAnnouncementsChange={setHasAnnouncements}
           />
         ) : (
           <div className="text-center py-8">

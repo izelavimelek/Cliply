@@ -197,19 +197,6 @@ export function Assets({
                 </p>
               </div>
             </div>
-            {assetsValidation.isCompleted && (
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setActiveSection('communication-assets')}
-                  className="h-8"
-                >
-                  Next: Communication
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>

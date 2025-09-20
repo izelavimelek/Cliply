@@ -86,6 +86,7 @@ const budgetTimelineSchema = z.object({
   total_budget: z.number().min(10),
   start_date: z.string().min(1),
   end_date: z.string().min(1),
+  submission_deadline: z.string().min(1),
 }).refine((data) => {
   // Validate rate-specific fields
   if (data.rate_type === 'per_thousand_views') {
@@ -148,12 +149,15 @@ const contentRequirementsSchema = z.object({
 });
 
 const audienceTargetingSchema = z.object({
-  target_geography: z.array(z.string()).optional(),
-  target_languages: z.array(z.string()).optional(),
+  target_geography: z.array(z.string()).min(1, "At least one geographic region is required"),
+  target_languages: z.array(z.string()).min(1, "At least one language is required"),
   target_age_range: z.object({
     min: z.number().min(13).max(100),
     max: z.number().min(13).max(100),
-  }).optional(),
+  }).refine(
+    (data) => data.min < data.max,
+    "Maximum age must be greater than minimum age"
+  ),
   target_gender: z.string().optional(),
   audience_interests: z.array(z.string()).optional(),
 });
@@ -192,29 +196,14 @@ export function validateCampaignOverview(data: CampaignData): boolean {
 
 export function validateBudgetTimeline(data: CampaignData): boolean {
   try {
-    // First validate the basic structure
-    const basicValidation = budgetTimelineSchema.parse({
+    // Validate the basic structure including submission_deadline
+    budgetTimelineSchema.parse({
       rate_type: data.rate_type,
       total_budget: data.total_budget,
       start_date: data.start_date,
       end_date: data.end_date,
+      submission_deadline: data.submission_deadline,
     });
-
-    // Then validate rate-specific fields
-    if (data.rate_type === 'per_thousand_views') {
-      return data.rate_per_thousand !== undefined && data.rate_per_thousand > 0;
-    }
-    if (data.rate_type === 'fixed_fee') {
-      return data.fixed_fee !== undefined && data.fixed_fee >= 1;
-    }
-    if (data.rate_type === 'hybrid') {
-      return data.base_rate !== undefined && data.base_rate >= 1 && 
-             data.performance_bonus !== undefined && data.performance_bonus > 0;
-    }
-    if (data.rate_type === 'commission') {
-      return data.commission_percentage !== undefined && 
-             data.commission_percentage >= 1 && data.commission_percentage <= 100;
-    }
     
     return true;
   } catch {
@@ -237,13 +226,13 @@ export function validateContentRequirements(campaign: any): boolean {
       music_guidelines: campaign.music_guidelines,
     });
     
-    // For content requirements, we need ALL 7 required fields to be completed:
-    // 3 Deliverable Quantity fields + 4 Required Elements fields
+    // For content requirements, we need these 5 required fields to be completed:
+    // 1 Deliverable Quantity field (clips OR long_videos) + 4 Required Elements fields
     
-    // Deliverable Quantity (3 required fields)
+    // Deliverable Quantity (at least one required)
     const hasClips = campaign.deliverable_quantity?.clips && campaign.deliverable_quantity.clips > 0;
     const hasLongVideos = campaign.deliverable_quantity?.long_videos && campaign.deliverable_quantity.long_videos > 0;
-    const hasImages = campaign.deliverable_quantity?.images && campaign.deliverable_quantity.images > 0;
+    const hasDeliverable = hasClips || hasLongVideos;
     
     // Required Elements (4 required fields)
     const hasLogoPlacement = campaign.required_elements?.logo_placement;
@@ -251,9 +240,8 @@ export function validateContentRequirements(campaign: any): boolean {
     const hasCallToAction = campaign.required_elements?.call_to_action;
     const hasHashtagRequirements = campaign.required_elements?.hashtag_requirements;
     
-    // ALL 7 required fields must be completed
-    return hasClips && hasLongVideos && hasImages && 
-           hasLogoPlacement && hasBrandMention && hasCallToAction && hasHashtagRequirements;
+    // All required fields must be completed
+    return hasDeliverable && hasLogoPlacement && hasBrandMention && hasCallToAction && hasHashtagRequirements;
   } catch {
     return false;
   }
@@ -269,16 +257,7 @@ export function validateAudienceTargeting(data: CampaignData): boolean {
       audience_interests: data.audience_interests,
     });
 
-    // At least one targeting criterion should be specified
-    const hasTargeting = !!(
-      (data.target_geography && data.target_geography.length > 0) ||
-      (data.target_languages && data.target_languages.length > 0) ||
-      (data.target_age_range && data.target_age_range.min && data.target_age_range.max) ||
-      (data.target_gender && data.target_gender !== "all") ||
-      (data.audience_interests && data.audience_interests.length > 0)
-    );
-
-    return hasTargeting;
+    return true;
   } catch {
     return false;
   }
@@ -345,28 +324,28 @@ export function getBudgetTimelineProgress(data: CampaignData): { completed: numb
   let completed = 0;
   const total = 5;
 
-  if (data.total_budget && data.total_budget > 0) completed++;
-  if (data.rate_type) completed++;
-  // Rate amount is now mandatory based on rate type
-  if (data.rate_type === 'per_thousand' && data.rate_per_thousand && data.rate_per_thousand > 0) completed++;
-  else if (data.rate_type === 'fixed_fee' && data.fixed_fee && data.fixed_fee > 0) completed++;
-  // Timeline fields are now mandatory
+  // Timeline fields (3 required)
   if (data.start_date) completed++;
   if (data.end_date) completed++;
+  if (data.submission_deadline) completed++;
+  
+  // Budget fields (2 required)
+  if (data.total_budget && data.total_budget > 0) completed++;
+  if (data.rate_type) completed++;
 
   return { completed, total };
 }
 
 export function getContentRequirementsProgress(data: CampaignData): { completed: number; total: number } {
   let completed = 0;
-  const total = 7; // Count individual required fields with asterisks
+  const total = 5; // 1 deliverable + 4 required elements
 
-  // Deliverable Quantity (3 required fields with *)
-  if (data.deliverable_quantity?.clips && data.deliverable_quantity.clips > 0) completed++;
-  if (data.deliverable_quantity?.long_videos && data.deliverable_quantity.long_videos > 0) completed++;
-  if (data.deliverable_quantity?.images && data.deliverable_quantity.images > 0) completed++;
+  // Deliverable Quantity (1 required - clips OR long_videos)
+  const hasClips = data.deliverable_quantity?.clips && data.deliverable_quantity.clips > 0;
+  const hasLongVideos = data.deliverable_quantity?.long_videos && data.deliverable_quantity.long_videos > 0;
+  if (hasClips || hasLongVideos) completed++;
 
-  // Required Elements (4 required fields with *)
+  // Required Elements (4 required fields)
   if (data.required_elements?.logo_placement) completed++;
   if (data.required_elements?.brand_mention) completed++;
   if (data.required_elements?.call_to_action) completed++;
@@ -489,16 +468,21 @@ export function getDetailedValidationErrors(data: CampaignData) {
 
   // Audience Targeting validation
   const audienceErrors: string[] = [];
-  const hasTargeting = !!(
-    (data.target_geography && data.target_geography.length > 0) ||
-    (data.target_languages && data.target_languages.length > 0) ||
-    (data.target_age_range && data.target_age_range.min && data.target_age_range.max) ||
-    (data.target_gender && data.target_gender !== "all") ||
-    (data.audience_interests && data.audience_interests.length > 0)
-  );
-  if (!hasTargeting) {
-    audienceErrors.push('At least one targeting criterion is required (geography, languages, age range, gender, or interests)');
+  
+  if (!data.target_geography || data.target_geography.length === 0) {
+    audienceErrors.push('Target geography is required');
   }
+  
+  if (!data.target_languages || data.target_languages.length === 0) {
+    audienceErrors.push('Target language is required');
+  }
+  
+  if (!data.target_age_range || !data.target_age_range.min || !data.target_age_range.max) {
+    audienceErrors.push('Target age range is required');
+  } else if (data.target_age_range.min >= data.target_age_range.max) {
+    audienceErrors.push('Maximum age must be greater than minimum age');
+  }
+  
   if (audienceErrors.length > 0) errors['audience-targeting'] = audienceErrors;
 
   // Agreements Compliance validation

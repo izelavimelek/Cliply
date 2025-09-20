@@ -30,7 +30,7 @@ export default function BrandDashboard() {
       }
 
       if (user.role !== "brand") {
-        router.push("/onboarding");
+        router.push("/auth");
         return;
       }
 

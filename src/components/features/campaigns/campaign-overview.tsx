@@ -112,17 +112,6 @@ export function CampaignOverview({
                     <p className="text-sm text-muted-foreground">Essential information about your campaign</p>
                   </div>
                 </div>
-                {editingSection !== 'campaign-basics' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => startEditing('campaign-basics')}
-                    className="hover:bg-primary/10"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
               </div>
             </div>
             <CardContent className="p-4">
@@ -218,20 +207,31 @@ export function CampaignOverview({
               ) : (
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    {/* Clickable Campaign Title */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('campaign-basics')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Campaign Title<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
-                        {campaign?.title || <span className="text-muted-foreground italic">Click edit to set title</span>}
+                      <p className="text-foreground group-hover:text-primary transition-colors">
+                        {campaign?.title || <span className="text-muted-foreground italic">Click to set title</span>}
                       </p>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    
+                    {/* Clickable Description */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('campaign-basics')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Description<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground leading-relaxed">
-                        {campaign?.description || <span className="text-muted-foreground italic">Click edit to set description</span>}
+                      <p className="text-foreground leading-relaxed group-hover:text-primary transition-colors">
+                        {campaign?.description || <span className="text-muted-foreground italic">Click to set description</span>}
                       </p>
                     </div>
                   </div>
@@ -253,17 +253,6 @@ export function CampaignOverview({
                     <p className="text-sm text-muted-foreground">Define your campaign's focus and reach</p>
                   </div>
                 </div>
-                {editingSection !== 'campaign-targeting' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => startEditing('campaign-targeting')}
-                    className="hover:bg-primary/10"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
               </div>
             </div>
             <CardContent className="p-4">
@@ -427,25 +416,36 @@ export function CampaignOverview({
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    {/* Clickable Objective */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('campaign-targeting')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Objective<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <div className="group-hover:text-primary transition-colors">
                         {campaign?.objective ? (
                           <Badge variant="secondary" className="capitalize">
                             {campaign.objective.replace('_', ' ')}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to select objective</span>
+                          <span className="text-muted-foreground italic">Click to select objective</span>
                         )}
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium text-base">Platforms<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                    </div>
+                    
+                    {/* Clickable Platforms */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('campaign-targeting')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-base">Platforms<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                      <div className="flex flex-wrap gap-2 group-hover:text-primary transition-colors">
                         {campaign?.platforms?.length ? (
                           campaign.platforms.map(platform => (
                             <Badge key={platform} variant="outline" className="capitalize">
@@ -453,23 +453,29 @@ export function CampaignOverview({
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to select platforms</span>
+                          <span className="text-muted-foreground italic">Click to select platforms</span>
                         )}
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    
+                    {/* Clickable Category */}
+                    <div 
+                      className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                      onClick={() => startEditing('campaign-targeting')}
+                    >
+                      <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-base">Category<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                        <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <p className="text-foreground">
+                      <div className="group-hover:text-primary transition-colors">
                         {campaign?.category ? (
                           <Badge variant="outline" className="capitalize">
                             {campaign.category.replace('_', ' ')}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground italic">Click edit to select category</span>
+                          <span className="text-muted-foreground italic">Click to select category</span>
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </div>

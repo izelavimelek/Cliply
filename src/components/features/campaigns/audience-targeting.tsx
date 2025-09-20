@@ -75,10 +75,10 @@ export function AudienceTargeting({
             </div>
             {audienceValidation.isCompleted && (
               <Button 
-                onClick={() => setActiveSection('budget-timeline')}
+                onClick={() => setActiveSection('assets')}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                <span className="text-sm font-medium">Next Step</span>
+                <span className="text-sm font-medium">Next: Assets</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}
@@ -123,17 +123,6 @@ export function AudienceTargeting({
                   <p className="text-sm text-muted-foreground">Target specific countries, states, or regions</p>
                 </div>
               </div>
-              {editingSection !== 'geography' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('geography')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -194,21 +183,25 @@ export function AudienceTargeting({
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div 
+                className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border space-y-4"
+                onClick={() => startEditing('geography')}
+              >
+                <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-base">Target Regions<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                  <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 {campaign?.target_geography && campaign.target_geography.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 group-hover:text-primary transition-colors">
                     {campaign.target_geography.map((region, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1 group-hover:bg-primary/20 transition-colors">
                         <MapPin className="h-3 w-3" />
                         {region}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to specify target geographic regions</p>
+                  <p className="text-sm text-muted-foreground italic group-hover:text-primary transition-colors">Click to specify target geographic regions</p>
                 )}
               </div>
             )}
@@ -228,17 +221,6 @@ export function AudienceTargeting({
                   <p className="text-sm text-muted-foreground">Primary languages for your target audience</p>
                 </div>
               </div>
-              {editingSection !== 'languages' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('languages')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -329,21 +311,25 @@ export function AudienceTargeting({
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div 
+                className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border space-y-4"
+                onClick={() => startEditing('languages')}
+              >
+                <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-base">Target Languages<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                  <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 {campaign?.target_languages && campaign.target_languages.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 group-hover:text-primary transition-colors">
                     {campaign.target_languages.map((language, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1 group-hover:bg-primary/20 transition-colors">
                         <Languages className="h-3 w-3" />
                         {language}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to specify target languages</p>
+                  <p className="text-sm text-muted-foreground italic group-hover:text-primary transition-colors">Click to specify target languages</p>
                 )}
               </div>
             )}
@@ -363,17 +349,6 @@ export function AudienceTargeting({
                   <p className="text-sm text-muted-foreground">Target age demographics for your campaign</p>
                 </div>
               </div>
-              {editingSection !== 'age-range' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('age-range')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -391,13 +366,16 @@ export function AudienceTargeting({
                       max="100"
                       placeholder="e.g., 18"
                       value={sectionData.target_age_range?.min || ''}
-                      onChange={(e) => setSectionData(prev => ({
-                        ...prev,
-                        target_age_range: {
-                          min: e.target.value ? parseInt(e.target.value) : (prev.target_age_range?.min || 0),
-                          max: prev.target_age_range?.max || 0
-                        }
-                      }))}
+                      onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : null;
+                        setSectionData(prev => ({
+                          ...prev,
+                          target_age_range: {
+                            min: value || 0,
+                            max: prev.target_age_range?.max || 0
+                          }
+                        }));
+                      }}
                       className="text-base p-3 h-10 border bg-background focus:ring-2 focus:ring-primary/20 transition-colors"
                     />
                   </div>
@@ -412,13 +390,16 @@ export function AudienceTargeting({
                       max="100"
                       placeholder="e.g., 35"
                       value={sectionData.target_age_range?.max || ''}
-                      onChange={(e) => setSectionData(prev => ({
-                        ...prev,
-                        target_age_range: {
-                          min: prev.target_age_range?.min || 0,
-                          max: e.target.value ? parseInt(e.target.value) : (prev.target_age_range?.max || 0)
-                        }
-                      }))}
+                      onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : null;
+                        setSectionData(prev => ({
+                          ...prev,
+                          target_age_range: {
+                            min: prev.target_age_range?.min || 0,
+                            max: value || 0
+                          }
+                        }));
+                      }}
                       className="text-base p-3 h-10 border bg-background focus:ring-2 focus:ring-primary/20 transition-colors"
                     />
                   </div>
@@ -459,22 +440,26 @@ export function AudienceTargeting({
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div 
+                className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border space-y-4"
+                onClick={() => startEditing('age-range')}
+              >
+                <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-base">Target Age Range<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                  <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 {campaign?.target_age_range?.min && campaign?.target_age_range?.max ? (
-                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
                     <Calendar className="h-4 w-4 text-primary" />
                     <div>
-                      <span className="font-medium">Target Age Range: </span>
-                      <span className="text-lg font-semibold">
+                      <span className="font-medium group-hover:text-primary transition-colors">Target Age Range: </span>
+                      <span className="text-lg font-semibold group-hover:text-primary transition-colors">
                         {campaign.target_age_range.min} - {campaign.target_age_range.max} years old
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to set the target age range</p>
+                  <p className="text-sm text-muted-foreground italic group-hover:text-primary transition-colors">Click to set the target age range</p>
                 )}
               </div>
             )}
@@ -495,17 +480,6 @@ export function AudienceTargeting({
                   <Badge variant="outline" className="mt-1">Optional</Badge>
                 </div>
               </div>
-              {editingSection !== 'gender' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('gender')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -573,13 +547,20 @@ export function AudienceTargeting({
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div 
+                className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border space-y-4"
+                onClick={() => startEditing('gender')}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-base">Target Gender</h4>
+                  <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 {campaign?.target_gender ? (
-                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
                     <Users className="h-4 w-4 text-primary" />
                     <div>
-                      <span className="font-medium">Target Gender: </span>
-                      <span className="capitalize">
+                      <span className="font-medium group-hover:text-primary transition-colors">Target Gender: </span>
+                      <span className="capitalize group-hover:text-primary transition-colors">
                         {campaign.target_gender === 'all' && 'All Genders'}
                         {campaign.target_gender === 'male' && 'Male'}
                         {campaign.target_gender === 'female' && 'Female'}
@@ -589,7 +570,7 @@ export function AudienceTargeting({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to specify gender targeting (optional)</p>
+                  <p className="text-sm text-muted-foreground italic group-hover:text-primary transition-colors">Click to specify gender targeting (optional)</p>
                 )}
               </div>
             )}
@@ -610,17 +591,6 @@ export function AudienceTargeting({
                   <Badge variant="outline" className="mt-1">Optional</Badge>
                 </div>
               </div>
-              {editingSection !== 'interests' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('interests')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -679,18 +649,25 @@ export function AudienceTargeting({
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div 
+                className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border space-y-4"
+                onClick={() => startEditing('interests')}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-base">Audience Interests</h4>
+                  <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 {campaign?.audience_interests && campaign.audience_interests.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {campaign.audience_interests.map((interest, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1 group-hover:bg-primary/20 transition-colors">
                         <Heart className="h-3 w-3" />
                         {interest}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Click edit to add audience interest tags (optional)</p>
+                  <p className="text-sm text-muted-foreground italic group-hover:text-primary transition-colors">Click to add audience interest tags (optional)</p>
                 )}
               </div>
             )}

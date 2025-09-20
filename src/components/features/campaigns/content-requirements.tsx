@@ -120,17 +120,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Specify how many pieces of content creators need to deliver</p>
                 </div>
               </div>
-              {editingSection !== 'deliverables' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('deliverables')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -146,7 +135,7 @@ export function ContentRequirements({
                       <span className="text-xs text-red-600 dark:text-red-400 font-medium">At least one required</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="clips" className="text-sm font-medium text-foreground">Short Clips (≤60s)</Label>
                       <Input
@@ -183,24 +172,6 @@ export function ContentRequirements({
                         className="text-base p-3 h-10 border bg-background focus:ring-2 focus:ring-primary/20 transition-colors"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="images" className="text-sm font-medium text-foreground">Static Images</Label>
-                      <Input
-                        id="images"
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={sectionData.deliverable_quantity?.images || ''}
-                        onChange={(e) => setSectionData(prev => ({
-                          ...prev,
-                          deliverable_quantity: {
-                            ...prev.deliverable_quantity,
-                            images: e.target.value ? parseInt(e.target.value) : undefined
-                          }
-                        }))}
-                        className="text-base p-3 h-10 border bg-background focus:ring-2 focus:ring-primary/20 transition-colors"
-                      />
-                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     At least one deliverable type is required. Specify the minimum quantity for each type.
@@ -223,8 +194,7 @@ export function ContentRequirements({
                     })}
                     disabled={savingSection === 'deliverables' || 
                       (!sectionData.deliverable_quantity?.clips && 
-                       !sectionData.deliverable_quantity?.long_videos && 
-                       !sectionData.deliverable_quantity?.images)}
+                       !sectionData.deliverable_quantity?.long_videos)}
                     className="min-w-[120px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     {savingSection === 'deliverables' ? (
@@ -243,35 +213,35 @@ export function ContentRequirements({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Clickable Short Clips */}
+                  <div 
+                    className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                    onClick={() => startEditing('deliverables')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-base">Short Clips (≤60s)<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                      <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <p className="text-foreground text-2xl font-semibold">
-                      {campaign?.deliverable_quantity?.clips || <span className="text-muted-foreground italic text-base">Not set</span>}
+                    <p className="text-foreground text-2xl font-semibold group-hover:text-primary transition-colors">
+                      {campaign?.deliverable_quantity?.clips || <span className="text-muted-foreground italic text-base">Click to set</span>}
                     </p>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
+                  
+                  {/* Clickable Long Videos */}
+                  <div 
+                    className="cursor-pointer group hover:bg-muted/50 p-3 rounded-lg transition-all duration-200 hover:shadow-sm border border-transparent hover:border-border"
+                    onClick={() => startEditing('deliverables')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-base">Long Videos (&gt;60s)<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
+                      <Edit className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-                    <p className="text-foreground text-2xl font-semibold">
-                      {campaign?.deliverable_quantity?.long_videos || <span className="text-muted-foreground italic text-base">Not set</span>}
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-base">Static Images<span className="text-red-600 dark:text-red-400 ml-1">*</span></h4>
-                    </div>
-                    <p className="text-foreground text-2xl font-semibold">
-                      {campaign?.deliverable_quantity?.images || <span className="text-muted-foreground italic text-base">Not set</span>}
+                    <p className="text-foreground text-2xl font-semibold group-hover:text-primary transition-colors">
+                      {campaign?.deliverable_quantity?.long_videos || <span className="text-muted-foreground italic text-base">Click to set</span>}
                     </p>
                   </div>
                 </div>
-                {!campaign?.deliverable_quantity?.clips && !campaign?.deliverable_quantity?.long_videos && !campaign?.deliverable_quantity?.images && (
-                  <p className="text-sm text-muted-foreground italic">Click edit to set how many videos, clips, or images creators need to deliver</p>
-                )}
               </div>
             )}
           </CardContent>
@@ -290,17 +260,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Select elements that creators must include in their content</p>
                 </div>
               </div>
-              {editingSection !== 'required-elements' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('required-elements')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -975,17 +934,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Content that creators must avoid in their submissions</p>
                 </div>
               </div>
-              {editingSection !== 'prohibited-content' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('prohibited-content')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -1296,17 +1244,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Define the desired tone and style for content creation</p>
                 </div>
               </div>
-              {editingSection !== 'tone-style' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('tone-style')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -1428,17 +1365,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Specify audio requirements and music preferences</p>
                 </div>
               </div>
-              {editingSection !== 'music-audio' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('music-audio')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -1543,17 +1469,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Provide URLs to examples that creators can reference</p>
                 </div>
               </div>
-              {editingSection !== 'example-references' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('example-references')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">
@@ -1683,17 +1598,6 @@ export function ContentRequirements({
                   <p className="text-sm text-muted-foreground">Additional requirements, specifications, and campaign guidelines</p>
                 </div>
               </div>
-              {editingSection !== 'general-requirements' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => startEditing('general-requirements')}
-                  className="text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-              )}
             </div>
           </div>
           <CardContent className="p-4">

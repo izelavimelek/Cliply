@@ -30,9 +30,10 @@ interface AnnouncementFeedProps {
   brandId: string;
   isDialogOpen?: boolean;
   setIsDialogOpen?: (open: boolean) => void;
+  onAnnouncementsChange?: (hasAnnouncements: boolean) => void;
 }
 
-export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIsDialogOpen, setIsDialogOpen: externalSetIsDialogOpen }: AnnouncementFeedProps) {
+export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIsDialogOpen, setIsDialogOpen: externalSetIsDialogOpen, onAnnouncementsChange }: AnnouncementFeedProps) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -55,6 +56,11 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
     fetchAnnouncements();
   }, [campaignId]);
 
+  // Notify parent component about announcements state
+  useEffect(() => {
+    onAnnouncementsChange?.(announcements.length > 0);
+  }, [announcements, onAnnouncementsChange]);
+
   const fetchAnnouncements = async () => {
     try {
       setLoading(true);
@@ -67,7 +73,9 @@ export function AnnouncementFeed({ campaignId, brandId, isDialogOpen: externalIs
 
       if (response.ok) {
         const data = await response.json();
-        setAnnouncements(data.announcements || []);
+        const announcementsData = data.announcements || [];
+        setAnnouncements(announcementsData);
+        onAnnouncementsChange?.(announcementsData.length > 0);
       }
     } catch (error) {
       console.error('Error fetching announcements:', error);

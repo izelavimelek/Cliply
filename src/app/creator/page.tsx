@@ -27,6 +27,7 @@ interface Activity {
   id: string;
   type: 'submission' | 'payout';
   status: string;
+  campaign_id?: string;
   campaign_title: string;
   amount: number;
   date: string;
@@ -185,6 +186,10 @@ export default function CreatorDashboard() {
       const activitiesData = await activitiesResponse.json();
       const activities = activitiesData.activities || [];
       
+      // Debug logging
+      console.log('Total activities received:', activities.length);
+      console.log('Activities data:', activities);
+      
       // Calculate stats from all activities
       const totalEarnings = activities
         .filter((a: Activity) => a.type === 'payout' && a.status === 'completed')
@@ -193,8 +198,18 @@ export default function CreatorDashboard() {
       const activeSubmissions = activities
         .filter((a: Activity) => a.type === 'submission' && a.status === 'pending').length;
       
-      const completedCampaigns = activities
-        .filter((a: Activity) => a.type === 'submission' && a.status === 'approved').length;
+      // Count unique campaigns joined (not total submissions)
+      const submissionActivities = activities.filter((a: Activity) => a.type === 'submission');
+      const uniqueCampaignIds = new Set(
+        submissionActivities
+          .filter((a: Activity) => a.campaign_id) // Only include activities with campaign_id
+          .map((a: Activity) => a.campaign_id)
+      );
+      const joinedCampaigns = uniqueCampaignIds.size;
+      
+      console.log('Submission activities:', submissionActivities.length);
+      console.log('Unique campaigns joined:', joinedCampaigns);
+      console.log('Campaign IDs:', Array.from(uniqueCampaignIds));
       
       const totalViews = activities
         .filter((a: Activity) => a.type === 'submission' && a.views)
@@ -204,12 +219,24 @@ export default function CreatorDashboard() {
         .filter((a: Activity) => a.type === 'payout' && a.status === 'pending')
         .reduce((sum: number, a: Activity) => sum + a.amount, 0);
 
+      // Calculate earnings from last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const earningsLast30Days = activities
+        .filter((a: Activity) => {
+          if (a.type !== 'payout' || a.status !== 'completed') return false;
+          const activityDate = new Date(a.date);
+          return activityDate >= thirtyDaysAgo;
+        })
+        .reduce((sum: number, a: Activity) => sum + a.amount, 0);
+
       setStats({
         totalEarnings,
         activeSubmissions,
-        completedCampaigns,
+        completedCampaigns: joinedCampaigns,
         totalViews,
-        totalEngagement: 0, // TODO: Calculate from snapshots
+        totalEngagement: earningsLast30Days, // Now using last 30 days earnings
         pendingPayouts
       });
 
@@ -324,6 +351,21 @@ export default function CreatorDashboard() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 1. Total Earnings (Last 30 Days) */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Earnings (Last 30 Days)</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.totalEngagement.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.totalEngagement === 0 ? 'No earnings in last 30 days' : 'Earned this month'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* 2. Total Earnings */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
@@ -332,63 +374,12 @@ export default function CreatorDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">${stats.totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalEarnings === 0 ? 'Start earning to see progress' : '+12% from last month'}
+              {stats.totalEarnings === 0 ? 'Your total earning so far' : '+12% from last month'}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Submissions</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeSubmissions}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeSubmissions === 0 ? 'No pending submissions' : 'Pending review'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.totalViews === 0 ? 'No views yet' : 'Across all platforms'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Campaigns</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedCampaigns}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.completedCampaigns === 0 ? 'No completed campaigns yet' : 'Successfully delivered'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Engagement</CardTitle>
-            <Heart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalEngagement.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.totalEngagement === 0 ? 'No engagement yet' : 'Likes, comments, shares'}
-            </p>
-          </CardContent>
-        </Card>
-
+        {/* 3. Pending Payouts */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
@@ -398,6 +389,48 @@ export default function CreatorDashboard() {
             <div className="text-2xl font-bold">${stats.pendingPayouts.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               {stats.pendingPayouts === 0 ? 'No pending payouts' : 'Awaiting payment'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* 4. Joined Campaigns */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Joined Campaigns</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.completedCampaigns}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.completedCampaigns === 0 ? 'No joined campaigns yet' : 'Campaigns you\'ve joined'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* 5. Pending Submissions */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Submissions</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeSubmissions}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.activeSubmissions === 0 ? 'No pending submissions' : 'Awaiting review'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* 6. Total Views */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.totalViews === 0 ? 'No views yet' : 'Across all platforms'}
             </p>
           </CardContent>
         </Card>
@@ -445,7 +478,7 @@ export default function CreatorDashboard() {
                       case 'pending':
                         return <Clock className="w-4 h-4 text-yellow-500" />;
                       case 'rejected':
-                        return <XCircle className="w-4 h-4 text-red-100" />;
+                        return <XCircle className="w-4 h-4 text-red-500" />;
                       default:
                         return <MessageCircle className="w-4 h-4 text-blue-500" />;
                     }
@@ -456,7 +489,7 @@ export default function CreatorDashboard() {
                       case 'processing':
                         return <Clock className="w-4 h-4 text-yellow-500" />;
                       case 'failed':
-                        return <XCircle className="w-4 h-4 text-red-100" />;
+                        return <XCircle className="w-4 h-4 text-red-500" />;
                       default:
                         return <DollarSign className="w-4 h-4 text-blue-500" />;
                     }
@@ -502,6 +535,13 @@ export default function CreatorDashboard() {
                   return 'outline';
                 };
 
+                const getStatusBadgeStyle = () => {
+                  if (activity.status === 'approved' || activity.status === 'completed') {
+                    return 'bg-green-500 text-white hover:bg-green-600';
+                  }
+                  return '';
+                };
+
                 return (
                   <div key={activity.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
@@ -514,10 +554,13 @@ export default function CreatorDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <Badge variant={getStatusVariant()}>
+                      <Badge 
+                        variant={getStatusVariant()}
+                        className={getStatusBadgeStyle()}
+                      >
                         <div className="flex items-center gap-1">
-                          {activity.status === 'approved' && <CheckCircle className="w-3 h-3 text-green-500" />}
-                          {activity.status === 'rejected' && <XCircle className="w-3 h-3 text-red-100" />}
+                          {activity.status === 'approved' && <CheckCircle className="w-3 h-3 text-white" />}
+                          {activity.status === 'rejected' && <XCircle className="w-3 h-3 text-white" />}
                           {activity.status === 'pending' && <Clock className="w-3 h-3 text-yellow-500" />}
                           {activity.status}
                         </div>
@@ -620,8 +663,22 @@ export default function CreatorDashboard() {
                 <div key={content.id} className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium">{content.title}</h4>
-                    <Badge variant="outline">{content.platform}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{content.platform}</Badge>
+                      {/* View Post Button */}
+                      {content.post_url && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(content.post_url, '_blank', 'noopener,noreferrer')}
+                          className="h-6 px-2 text-xs"
+                        >
+                          View Post
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
@@ -636,19 +693,6 @@ export default function CreatorDashboard() {
                       <span>${content.earnings}</span>
                     </div>
                   </div>
-                  {/* TODO: Add click handler to open post_url in new tab */}
-                  {content.post_url && (
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      <a 
-                        href={content.post_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        View Post →
-                      </a>
-                    </div>
-                  )}
                 </div>
               ))
             )}

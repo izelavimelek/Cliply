@@ -4,7 +4,7 @@ export interface Campaign {
   id: string;
   title: string;
   description: string;
-  status: string;
+  status: 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'active' | 'paused' | 'completed';
   brand_id?: string;
   platform?: string;
   platforms?: string[];

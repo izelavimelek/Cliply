@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
       getPayouts(user.userId)
     ]);
 
+    console.log('API: Found submissions:', submissions.length);
+    console.log('API: Submissions data:', submissions);
+
     // Get campaign details for submissions
     const db = await getDatabase();
     const campaignsCollection = db.collection(Collections.CAMPAIGNS);
@@ -74,6 +77,7 @@ export async function GET(request: NextRequest) {
         id: submission._id?.toString(),
         type: 'submission',
         status: submission.status,
+        campaign_id: submission.campaign_id?.toString(),
         campaign_title: campaign?.title || 'Campaign Submission',
         amount: submission.earnings || 0,
         date: submission.created_at,
@@ -103,6 +107,12 @@ export async function GET(request: NextRequest) {
 
     // Sort activities by date (most recent first)
     activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    console.log('API: Total activities created:', activities.length);
+    console.log('API: Activities by type:', {
+      submissions: activities.filter(a => a.type === 'submission').length,
+      payouts: activities.filter(a => a.type === 'payout').length
+    });
 
     // Apply pagination
     const totalActivities = activities.length;
